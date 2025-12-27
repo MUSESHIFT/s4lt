@@ -209,3 +209,44 @@ def _copy_backref(output: bytearray, offset: int, length: int) -> None:
     for i in range(length):
         # Must read one at a time - backref can overlap with destination
         output.append(output[start + i])
+
+
+def compress(data: bytes, compression_type: int) -> bytes:
+    """Compress data using the specified compression type.
+
+    Args:
+        data: Uncompressed data bytes
+        compression_type: Compression type to use
+
+    Returns:
+        Compressed data with appropriate header
+
+    Raises:
+        CompressionError: If compression fails or type unsupported
+    """
+    if compression_type == COMPRESSION_NONE:
+        return data
+
+    if compression_type == COMPRESSION_ZLIB:
+        return compress_zlib(data)
+
+    raise CompressionError(f"Compression not supported for type: 0x{compression_type:04X}")
+
+
+def compress_zlib(data: bytes) -> bytes:
+    """Compress data using zlib/deflate.
+
+    Returns data with 2-byte header matching Sims 4 format.
+
+    Args:
+        data: Uncompressed data
+
+    Returns:
+        Compressed data with header
+    """
+    # Compress with raw deflate (no zlib wrapper)
+    compressed = zlib.compress(data, level=9)[2:-4]  # Strip zlib header/trailer
+
+    # Add 2-byte header (compression marker)
+    header = bytes([0x78, 0x9C])  # Standard zlib header for level 9
+    return header + compressed
