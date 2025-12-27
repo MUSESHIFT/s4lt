@@ -120,3 +120,16 @@ def test_tray_info_not_found():
 
         assert result.exit_code == 1
         assert "error" in result.output.lower()
+
+
+def test_tray_cc_no_tray_configured():
+    """tray cc should error if tray not configured."""
+    runner = CliRunner()
+
+    settings = Settings()  # No tray_path
+
+    with patch("s4lt.cli.commands.tray.get_settings", return_value=settings):
+        result = runner.invoke(cli, ["tray", "cc", "test"])
+
+    assert result.exit_code == 1
+    assert "not configured" in result.output.lower()
