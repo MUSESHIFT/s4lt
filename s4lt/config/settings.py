@@ -17,6 +17,7 @@ class Settings:
 
     mods_path: Path | None = None
     tray_path: Path | None = None
+    game_path: Path | None = None
     include_subfolders: bool = True
     ignore_patterns: list[str] = field(
         default_factory=lambda: ["__MACOSX", ".DS_Store", "*.disabled"]
@@ -28,6 +29,7 @@ class Settings:
             "paths": {
                 "mods": str(self.mods_path) if self.mods_path else None,
                 "tray": str(self.tray_path) if self.tray_path else None,
+                "game": str(self.game_path) if self.game_path else None,
             },
             "scan": {
                 "include_subfolders": self.include_subfolders,
@@ -54,11 +56,16 @@ def get_settings() -> Settings:
         if tray_str := paths_data.get("tray"):
             tray_path = Path(tray_str)
 
+        game_path = None
+        if game_str := paths_data.get("game"):
+            game_path = Path(game_str)
+
         scan = data.get("scan", {})
 
         return Settings(
             mods_path=mods_path,
             tray_path=tray_path,
+            game_path=game_path,
             include_subfolders=scan.get("include_subfolders", True),
             ignore_patterns=scan.get("ignore_patterns", Settings().ignore_patterns),
         )
@@ -77,6 +84,8 @@ def save_settings(settings: Settings) -> None:
         lines.append(f'mods = "{settings.mods_path}"')
     if settings.tray_path:
         lines.append(f'tray = "{settings.tray_path}"')
+    if settings.game_path:
+        lines.append(f'game = "{settings.game_path}"')
     lines.append("")
     lines.append("[scan]")
     lines.append(f"include_subfolders = {'true' if settings.include_subfolders else 'false'}")

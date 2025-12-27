@@ -86,5 +86,26 @@ def tray_info(name_or_id: str, json_output: bool):
     run_tray_info(name_or_id, json_output=json_output)
 
 
+@cli.group()
+def ea():
+    """Manage EA content index (base game)."""
+    pass
+
+
+@ea.command("scan")
+@click.option("--path", "game_path", help="Path to game folder")
+def ea_scan(game_path: str | None):
+    """Scan and index base game content."""
+    from s4lt.cli.commands.ea import run_ea_scan
+    run_ea_scan(game_path_arg=game_path)
+
+
+@ea.command("status")
+def ea_status():
+    """Show EA index status."""
+    from s4lt.cli.commands.ea import run_ea_status
+    run_ea_status()
+
+
 if __name__ == "__main__":
     cli()
