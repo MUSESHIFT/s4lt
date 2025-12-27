@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from pathlib import Path
 
-from s4lt.web.routers import dashboard, mods, tray, profiles, api
+from s4lt.web.routers import dashboard, mods, tray, profiles, api, package
 
 
 def create_app() -> FastAPI:
@@ -20,5 +20,6 @@ def create_app() -> FastAPI:
     app.include_router(tray.router)
     app.include_router(profiles.router)
     app.include_router(api.router)
+    app.include_router(package.router)
 
     return app
