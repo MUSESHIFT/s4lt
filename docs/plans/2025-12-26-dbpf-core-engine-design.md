@@ -233,6 +233,96 @@ class CorruptedIndexError(DBPFError):
 
 ---
 
+---
+
+## Compression Implementation
+
+### zlib (0x5A42)
+Standard Python zlib. Skip first 2 bytes (compression header), decompress rest.
+
+```python
+import zlib
+
+def decompress_zlib(data: bytes) -> bytes:
+    # Skip 2-byte header, decompress
+    return zlib.decompress(data[2:], -zlib.MAX_WBITS)
+```
+
+### RefPack (0xFFFF / 0xFFFE)
+EA's proprietary LZ77 variant. Must implement from scratch.
+
+**Header:**
+- Byte 0-1: Flags + compressed size info
+- If flag bit set: 4-byte uncompressed size follows
+
+**Commands (after header):**
+- `0x00-0x7F`: Literal run (copy N bytes from input)
+- `0x80-0xBF`: Short back-reference (offset < 1024, length 3-10)
+- `0xC0-0xDF`: Medium back-reference (offset < 16384, length 4-67)
+- `0xE0-0xFB`: Long back-reference (offset < 131072, length 5-1028)
+- `0xFC-0xFF`: End markers / special
+
+**Implementation approach:**
+1. Parse header to get sizes
+2. Read commands in loop
+3. For literals: copy bytes to output
+4. For back-refs: copy from already-decompressed output
+5. Stop at end marker or when output size reached
+
+---
+
+## Resource Type Handlers
+
+Start with identification only. Full parsing comes later.
+
+```python
+# core/types.py
+RESOURCE_TYPES = {
+    0x034AEECB: "CASPart",
+    0x0333406C: "Tuning",
+    0x220557DA: "StringTable",
+    0x00B2D882: "DDS",
+    0x3C1AF1F2: "PNG",
+    0x015A1849: "Geometry",
+    0xC0DB5AE7: "Catalog",
+    0x025ED6F4: "SimData",
+    # Add more as discovered
+}
+
+def get_type_name(type_id: int) -> str:
+    return RESOURCE_TYPES.get(type_id, f"Unknown_{type_id:08X}")
+```
+
+Phase 1 goal: Identify and extract raw bytes. Type-specific parsing (mesh decoding, tuning XML parsing) comes in later phases.
+
+---
+
+## Error Handling
+
+Fail fast with clear messages. Don't silently corrupt data.
+
+```python
+class DBPFError(Exception):
+    """Base for all DBPF errors"""
+
+class InvalidMagicError(DBPFError):
+    """Not a DBPF file"""
+
+class UnsupportedVersionError(DBPFError):
+    """DBPF version not 2.x"""
+
+class CorruptedIndexError(DBPFError):
+    """Index table malformed"""
+
+class CompressionError(DBPFError):
+    """Decompression failed"""
+
+class ResourceNotFoundError(DBPFError):
+    """Requested resource doesn't exist"""
+```
+
+---
+
 ## Next Steps After Phase 1
 
 With the core engine complete, we can build:
