@@ -110,3 +110,51 @@ def organize_by_type(
         conn.commit()
 
     return OrganizeResult(moves=moves, executed=not dry_run)
+
+
+def organize_by_creator(
+    conn: sqlite3.Connection,
+    mods_path: Path,
+    dry_run: bool = True,
+) -> OrganizeResult:
+    """Organize mods into creator subfolders.
+
+    Args:
+        conn: Database connection
+        mods_path: Path to the Mods folder
+        dry_run: If True, don't actually move files
+
+    Returns:
+        OrganizeResult with list of moves
+    """
+    moves = []
+    mods = get_all_mods(conn)
+
+    for mod in mods:
+        mod_path = mods_path / mod["path"]
+        if not mod_path.exists():
+            continue
+
+        creator = extract_creator(mod["filename"])
+        target_dir = mods_path / creator
+
+        # Skip if already in correct folder
+        if mod_path.parent == target_dir:
+            continue
+
+        target_path = target_dir / mod_path.name
+        moves.append(MoveOp(source=mod_path, target=target_path))
+
+    if not dry_run:
+        for move in moves:
+            move.target.parent.mkdir(parents=True, exist_ok=True)
+            move.source.rename(move.target)
+            # Update path in database
+            new_rel_path = str(move.target.relative_to(mods_path))
+            conn.execute(
+                "UPDATE mods SET path = ? WHERE path = ?",
+                (new_rel_path, str(move.source.relative_to(mods_path))),
+            )
+        conn.commit()
+
+    return OrganizeResult(moves=moves, executed=not dry_run)

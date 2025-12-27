@@ -87,3 +87,49 @@ def test_organize_by_type_moves_files():
         assert (mods_path / "CAS" / "cas.package").exists()
         assert len(result.moves) == 1
         conn.close()
+
+
+# Tests for organize_by_creator
+from s4lt.organize.sorter import organize_by_creator
+
+
+def test_organize_by_creator_moves_files():
+    """organize_by_creator should move files to creator folders."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = Path(tmpdir) / "test.db"
+        init_db(db_path)
+        conn = get_connection(db_path)
+
+        mods_path = Path(tmpdir) / "Mods"
+        mods_path.mkdir()
+        mod_file = mods_path / "SimsyCreator_Hair.package"
+        mod_file.write_bytes(b"DBPF")
+
+        upsert_mod(conn, "SimsyCreator_Hair.package", "SimsyCreator_Hair.package", 100, 1.0, "hash", 1)
+
+        result = organize_by_creator(conn, mods_path, dry_run=False)
+
+        assert not mod_file.exists()
+        assert (mods_path / "Simsycreator" / "SimsyCreator_Hair.package").exists()
+        assert len(result.moves) == 1
+        conn.close()
+
+
+def test_organize_by_creator_uncategorized():
+    """organize_by_creator should put unknown to _Uncategorized."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = Path(tmpdir) / "test.db"
+        init_db(db_path)
+        conn = get_connection(db_path)
+
+        mods_path = Path(tmpdir) / "Mods"
+        mods_path.mkdir()
+        mod_file = mods_path / "random.package"
+        mod_file.write_bytes(b"DBPF")
+
+        upsert_mod(conn, "random.package", "random.package", 100, 1.0, "hash", 1)
+
+        result = organize_by_creator(conn, mods_path, dry_run=False)
+
+        assert (mods_path / "_Uncategorized" / "random.package").exists()
+        conn.close()
