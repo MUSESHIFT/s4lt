@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Tray Browser - S4LT{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Tray Browser</h1>
+    <span class="text-gray-400">{{ total }} items</span>
+</div>
+
+<!-- Info -->
+<div class="bg-gray-800 rounded-lg p-4 border border-gray-700 mb-6">
+    <div class="text-gray-400">Tray Path: {{ tray_path }}</div>
+</div>
+
+<!-- Filters -->
+<div class="bg-gray-800 rounded-lg p-4 border border-gray-700 mb-6">
+    <form class="flex flex-wrap gap-4" method="get">
+        <input
+            type="text"
+            name="search"
+            value="{{ search }}"
+            placeholder="Search by name..."
+            class="px-4 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500">
+        <select name="item_type" class="px-4 py-2 bg-gray-700 border border-gray-600 rounded">
+            <option value="">All Types</option>
+            {% for t, count in type_counts.items() %}
+            <option value="{{ t }}" {% if item_type == t %}selected{% endif %}>{{ t }} ({{ count }})</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded">Filter</button>
+    </form>
+</div>
+
+<!-- Tray Grid -->
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+    {% for item in items %}
+    <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden hover:border-blue-500 transition-colors">
+        <div class="aspect-square bg-gray-900 flex items-center justify-center">
+            {% if item.has_thumbnail %}
+            <img src="/tray/{{ item.id }}/thumbnail" alt="{{ item.name }}" class="w-full h-full object-cover">
+            {% else %}
+            <span class="text-gray-600 text-4xl">?</span>
+            {% endif %}
+        </div>
+        <div class="p-3">
+            <div class="font-medium truncate" title="{{ item.name }}">{{ item.name }}</div>
+            <div class="text-sm text-gray-400">{{ item.type }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not items %}
+<div class="text-center text-gray-500 py-12">
+    <p>No tray items found.</p>
+    <p class="text-sm mt-2">Make sure the tray path is configured correctly.</p>
+</div>
+{% endif %}
+{% endblock %}
