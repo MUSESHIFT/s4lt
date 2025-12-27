@@ -51,5 +51,40 @@ def info(package: str):
     run_info(package)
 
 
+@cli.group()
+def tray():
+    """Manage tray items (saved Sims, lots, rooms)."""
+    pass
+
+
+@tray.command("list")
+@click.option("--type", "item_type", type=click.Choice(["household", "lot", "room"]),
+              help="Filter by item type")
+@click.option("--json", "json_output", is_flag=True, help="Output as JSON")
+def tray_list(item_type: str | None, json_output: bool):
+    """List all tray items."""
+    from s4lt.cli.commands.tray import run_tray_list
+    run_tray_list(item_type=item_type, json_output=json_output)
+
+
+@tray.command("export")
+@click.argument("name_or_id")
+@click.option("--output", "-o", "output_dir", help="Output directory")
+@click.option("--no-thumb", is_flag=True, help="Don't export thumbnail")
+def tray_export(name_or_id: str, output_dir: str | None, no_thumb: bool):
+    """Export a tray item to a directory."""
+    from s4lt.cli.commands.tray import run_tray_export
+    run_tray_export(name_or_id, output_dir, include_thumb=not no_thumb)
+
+
+@tray.command("info")
+@click.argument("name_or_id")
+@click.option("--json", "json_output", is_flag=True, help="Output as JSON")
+def tray_info(name_or_id: str, json_output: bool):
+    """Show details about a tray item."""
+    from s4lt.cli.commands.tray import run_tray_info
+    run_tray_info(name_or_id, json_output=json_output)
+
+
 if __name__ == "__main__":
     cli()
