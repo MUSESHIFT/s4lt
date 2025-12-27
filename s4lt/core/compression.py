@@ -69,18 +69,143 @@ def decompress_zlib(data: bytes, expected_size: int = 0) -> bytes:
 def decompress_refpack(data: bytes, expected_size: int = 0) -> bytes:
     """Decompress RefPack (EA proprietary) compressed data.
 
-    RefPack is an LZ77 variant used by EA games.
+    RefPack is an LZ77 variant used by EA games including Sims 4.
+
+    Format:
+    - 2-byte header (0x10 0xFB for compressed)
+    - 3-byte big-endian uncompressed size
+    - Command stream
+
+    Commands:
+    - 0x00-0x7F: Literal + short backref
+    - 0x80-0xBF: Short backref (offset < 1024, len 3-10)
+    - 0xC0-0xDF: Medium backref (offset < 16384, len 4-67)
+    - 0xE0-0xFB: Literal run (1-28 bytes)
+    - 0xFC-0xFF: Stop codes
 
     Args:
-        data: Compressed data
+        data: Compressed data with RefPack header
         expected_size: Expected output size
 
     Returns:
         Decompressed data
     """
-    # TODO: Implement RefPack decompression
-    # For now, raise a clear error
-    raise CompressionError(
-        "RefPack decompression not yet implemented. "
-        "This resource uses EA's proprietary compression."
-    )
+    if len(data) < 5:
+        raise CompressionError("RefPack data too short for header")
+
+    # Check header
+    if data[0] != 0x10 or data[1] != 0xFB:
+        raise CompressionError(f"Invalid RefPack header: {data[0]:02X} {data[1]:02X}")
+
+    # Read uncompressed size (3 bytes, big-endian)
+    uncompressed_size = (data[2] << 16) | (data[3] << 8) | data[4]
+
+    if expected_size > 0 and uncompressed_size != expected_size:
+        # Use expected_size as it's more reliable
+        uncompressed_size = expected_size
+
+    output = bytearray()
+    pos = 5  # Start after header
+
+    try:
+        while pos < len(data) and len(output) < uncompressed_size:
+            cmd = data[pos]
+            pos += 1
+
+            if cmd <= 0x7F:
+                # 0x00-0x7F: Literal bytes + short backref
+                # Bits: 0 L L O O O O O
+                # L = literal count (0-3), O = offset low bits
+                literal_count = (cmd >> 5) & 0x03
+
+                # Copy literals
+                for _ in range(literal_count):
+                    if pos >= len(data):
+                        raise CompressionError("Unexpected end in literal run")
+                    output.append(data[pos])
+                    pos += 1
+
+                # Backref
+                if pos >= len(data):
+                    raise CompressionError("Unexpected end reading backref")
+                byte2 = data[pos]
+                pos += 1
+
+                offset = ((cmd & 0x1F) << 3) | ((byte2 >> 5) & 0x07)
+                length = (byte2 & 0x1F) + 3
+
+                offset += 1  # Offset is 1-based
+                _copy_backref(output, offset, length)
+
+            elif cmd <= 0xBF:
+                # 0x80-0xBF: Short backref
+                # offset < 1024, length 3-10
+                if pos >= len(data):
+                    raise CompressionError("Unexpected end in short backref")
+                byte2 = data[pos]
+                pos += 1
+
+                offset = ((cmd & 0x03) << 8) | byte2
+                length = ((cmd >> 2) & 0x07) + 3
+
+                offset += 1
+                _copy_backref(output, offset, length)
+
+            elif cmd <= 0xDF:
+                # 0xC0-0xDF: Medium backref
+                # offset < 16384, length 4-67
+                if pos + 2 > len(data):
+                    raise CompressionError("Unexpected end in medium backref")
+                byte2 = data[pos]
+                byte3 = data[pos + 1]
+                pos += 2
+
+                offset = ((cmd & 0x03) << 12) | (byte2 << 4) | ((byte3 >> 4) & 0x0F)
+                length = ((cmd >> 2) & 0x0F) + 4
+
+                offset += 1
+                _copy_backref(output, offset, length)
+
+            elif cmd <= 0xFB:
+                # 0xE0-0xFB: Literal run (1-28 bytes)
+                literal_count = (cmd - 0xDF)
+
+                for _ in range(literal_count):
+                    if pos >= len(data):
+                        raise CompressionError("Unexpected end in literal run")
+                    output.append(data[pos])
+                    pos += 1
+
+            else:
+                # 0xFC-0xFF: Stop codes
+                # 0xFC = stop, 0xFD-0xFF = stop + trailing literals
+                trailing = cmd - 0xFC
+                for _ in range(trailing):
+                    if pos >= len(data):
+                        break
+                    output.append(data[pos])
+                    pos += 1
+                break
+
+        result = bytes(output)
+
+        if expected_size > 0 and len(result) != expected_size:
+            raise CompressionError(
+                f"RefPack size mismatch: got {len(result)}, expected {expected_size}"
+            )
+
+        return result
+
+    except IndexError as e:
+        raise CompressionError(f"RefPack decompression failed: {e}")
+
+
+def _copy_backref(output: bytearray, offset: int, length: int) -> None:
+    """Copy bytes from earlier in output (backref)."""
+    if offset > len(output):
+        raise CompressionError(f"Invalid backref offset {offset} (output size {len(output)})")
+
+    start = len(output) - offset
+    for i in range(length):
+        # Must read one at a time - backref can overlap with destination
+        output.append(output[start + i])
