@@ -8,6 +8,7 @@ from s4lt.core.exceptions import (
     CompressionError,
     ResourceNotFoundError,
 )
+from s4lt.core.types import get_type_name, RESOURCE_TYPES
 
 __all__ = [
     "DBPFError",
@@ -16,4 +17,6 @@ __all__ = [
     "CorruptedIndexError",
     "CompressionError",
     "ResourceNotFoundError",
+    "get_type_name",
+    "RESOURCE_TYPES",
 ]
