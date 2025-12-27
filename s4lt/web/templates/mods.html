@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Mods Browser - S4LT{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Mods Browser</h1>
+    <span class="text-gray-400">{{ total }} mods</span>
+</div>
+
+<!-- Filters -->
+<div class="bg-gray-800 rounded-lg p-4 border border-gray-700 mb-6">
+    <form class="flex flex-wrap gap-4" method="get">
+        <input
+            type="text"
+            name="search"
+            value="{{ search }}"
+            placeholder="Search mods..."
+            class="px-4 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500">
+        <select name="category" class="px-4 py-2 bg-gray-700 border border-gray-600 rounded">
+            <option value="">All Categories</option>
+            {% for cat, count in categories.items() %}
+            <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }} ({{ count }})</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded">Filter</button>
+    </form>
+</div>
+
+<!-- Mods Table -->
+<div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-700">
+            <tr>
+                <th class="px-4 py-3 text-left">Filename</th>
+                <th class="px-4 py-3 text-left">Category</th>
+                <th class="px-4 py-3 text-left">Size</th>
+                <th class="px-4 py-3 text-left">Resources</th>
+                <th class="px-4 py-3 text-right">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-700">
+            {% for mod in mods %}
+            <tr class="hover:bg-gray-750">
+                <td class="px-4 py-3">
+                    <div class="font-medium">{{ mod.filename }}</div>
+                    <div class="text-sm text-gray-400">{{ mod.path }}</div>
+                </td>
+                <td class="px-4 py-3">
+                    <span class="px-2 py-1 rounded text-sm
+                        {% if mod.category == 'CAS' %}bg-pink-600
+                        {% elif mod.category == 'BuildBuy' %}bg-blue-600
+                        {% elif mod.category == 'Script' %}bg-purple-600
+                        {% elif mod.category == 'Tuning' %}bg-green-600
+                        {% else %}bg-gray-600{% endif %}">
+                        {{ mod.category or 'Unknown' }}
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-gray-400">{{ "%.1f"|format(mod.size / 1024) }} KB</td>
+                <td class="px-4 py-3 text-gray-400">{{ mod.resource_count or 0 }}</td>
+                <td class="px-4 py-3 text-right">
+                    <button
+                        hx-post="/mods/{{ mod.id }}/toggle"
+                        hx-swap="none"
+                        class="px-3 py-1 bg-gray-600 hover:bg-gray-500 rounded text-sm">
+                        Toggle
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if pages > 1 %}
+<div class="flex justify-center gap-2 mt-6">
+    {% if page > 1 %}
+    <a href="?page={{ page - 1 }}&search={{ search }}&category={{ category }}"
+       class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded">Previous</a>
+    {% endif %}
+    <span class="px-4 py-2 text-gray-400">Page {{ page }} of {{ pages }}</span>
+    {% if page < pages %}
+    <a href="?page={{ page + 1 }}&search={{ search }}&category={{ category }}"
+       class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded">Next</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
