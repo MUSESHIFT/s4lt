@@ -269,3 +269,103 @@ def run_tray_info(name_or_id: str, json_output: bool = False):
         console.print(f"[bold]Thumbnails:[/bold] {len(thumbs)} available")
     else:
         console.print("[dim]No thumbnails found[/dim]")
+
+
+def run_tray_cc(
+    name_or_id: str,
+    verbose: bool = False,
+    json_output: bool = False,
+):
+    """Show CC usage for a tray item."""
+    from s4lt.tray.cc_tracker import get_cc_summary
+    from s4lt.ea import init_ea_db, get_ea_db_path
+    from s4lt.db.schema import get_connection
+    from s4lt.config.settings import DB_PATH
+
+    settings = get_settings()
+
+    if settings.tray_path is None:
+        print_error("Tray folder not configured. Run 's4lt tray list' first.")
+        sys.exit(1)
+
+    tray_path = settings.tray_path
+
+    # Check EA index
+    ea_db_path = get_ea_db_path()
+    if not ea_db_path.exists():
+        if not json_output:
+            print_warning("EA content not indexed. Run 's4lt ea scan' first.")
+            print_warning("Without EA index, all non-mod TGIs show as 'unknown'.")
+            if not click.confirm("Continue anyway?", default=False):
+                sys.exit(0)
+
+    # Find the item
+    discovered = discover_tray_items(tray_path)
+    target = None
+
+    for d in discovered:
+        if d["id"] == name_or_id:
+            target = d
+            break
+        try:
+            item = TrayItem.from_path(tray_path, d["id"])
+            if item.name.lower() == name_or_id.lower():
+                target = d
+                break
+        except Exception:
+            pass
+
+    if not target:
+        if json_output:
+            print(json.dumps({"error": f"Tray item not found: {name_or_id}"}))
+        else:
+            print_error(f"Tray item not found: {name_or_id}")
+        sys.exit(1)
+
+    # Load item and analyze
+    item = TrayItem.from_path(tray_path, target["id"])
+
+    # Connect to databases
+    ea_conn = init_ea_db(ea_db_path) if ea_db_path.exists() else None
+    mods_conn = get_connection(DB_PATH) if DB_PATH.exists() else None
+
+    if ea_conn is None and mods_conn is None:
+        print_error("No indexes available. Run 's4lt scan' and 's4lt ea scan' first.")
+        sys.exit(1)
+
+    # Get summary
+    if mods_conn:
+        summary = get_cc_summary(item, ea_conn, mods_conn)
+    else:
+        summary = {"mods": {}, "missing_count": 0, "ea_count": 0, "total": 0}
+
+    if json_output:
+        print(json.dumps({
+            "name": item.name,
+            "id": item.id,
+            "type": item.item_type.value,
+            "cc": summary,
+        }))
+    else:
+        console.print(f"\n[bold]{item.name}[/bold]")
+        console.print(f"  Type: [cyan]{item.item_type.value}[/cyan]")
+        console.print()
+
+        if summary["mods"]:
+            console.print("[bold]CC Usage:[/bold]")
+            for mod_name, count in sorted(summary["mods"].items()):
+                console.print(f"  {count} items from [cyan]{mod_name}[/cyan]")
+        else:
+            console.print("[dim]No CC detected[/dim]")
+
+        if summary["missing_count"] > 0:
+            console.print(f"\n[red]Warning: {summary['missing_count']} missing CC items[/red]")
+
+        if verbose:
+            console.print(f"\n[dim]EA resources: {summary['ea_count']}[/dim]")
+            console.print(f"[dim]Total TGIs: {summary['total']}[/dim]")
+
+    if ea_conn:
+        ea_conn.close()
+    if mods_conn:
+        mods_conn.close()

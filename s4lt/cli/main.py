@@ -86,6 +86,16 @@ def tray_info(name_or_id: str, json_output: bool):
     run_tray_info(name_or_id, json_output=json_output)
 
 
+@tray.command("cc")
+@click.argument("name_or_id")
+@click.option("--verbose", "-v", is_flag=True, help="Show detailed info")
+@click.option("--json", "json_output", is_flag=True, help="Output as JSON")
+def tray_cc(name_or_id: str, verbose: bool, json_output: bool):
+    """Show CC usage for a tray item."""
+    from s4lt.cli.commands.tray import run_tray_cc
+    run_tray_cc(name_or_id, verbose=verbose, json_output=json_output)
+
+
 @cli.group()
 def ea():
     """Manage EA content index (base game)."""
