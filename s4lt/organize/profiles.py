@@ -3,6 +3,7 @@
 import sqlite3
 import time
 from dataclasses import dataclass
+from pathlib import Path
 
 from s4lt.organize.exceptions import ProfileNotFoundError, ProfileExistsError
 
@@ -14,6 +15,13 @@ class Profile:
     name: str
     created_at: float
     is_auto: bool
+
+
+@dataclass
+class ProfileMod:
+    """A mod's state in a profile."""
+    mod_path: str
+    enabled: bool
 
 
 def create_profile(
@@ -99,3 +107,69 @@ def delete_profile(conn: sqlite3.Connection, name: str) -> None:
     if cursor.fetchone() is None:
         raise ProfileNotFoundError(f"Profile '{name}' not found")
     conn.commit()
+
+
+def save_profile_snapshot(
+    conn: sqlite3.Connection,
+    profile_id: int,
+    mods_path: Path,
+) -> int:
+    """Save current mod states to a profile.
+
+    Scans the mods folder for all .package and .package.disabled files
+    and records their enabled/disabled state.
+
+    Args:
+        conn: Database connection
+        profile_id: ID of the profile to save to
+        mods_path: Path to the Mods folder
+
+    Returns:
+        Number of mods saved
+    """
+    # Clear existing mods for this profile
+    conn.execute("DELETE FROM profile_mods WHERE profile_id = ?", (profile_id,))
+
+    # Find all mods (enabled and disabled)
+    enabled_mods = list(mods_path.rglob("*.package"))
+    disabled_mods = list(mods_path.rglob("*.package.disabled"))
+
+    count = 0
+    for mod in enabled_mods:
+        rel_path = str(mod.relative_to(mods_path))
+        conn.execute(
+            "INSERT INTO profile_mods (profile_id, mod_path, enabled) VALUES (?, ?, 1)",
+            (profile_id, rel_path),
+        )
+        count += 1
+
+    for mod in disabled_mods:
+        rel_path = str(mod.relative_to(mods_path))
+        conn.execute(
+            "INSERT INTO profile_mods (profile_id, mod_path, enabled) VALUES (?, ?, 0)",
+            (profile_id, rel_path),
+        )
+        count += 1
+
+    conn.commit()
+    return count
+
+
+def get_profile_mods(conn: sqlite3.Connection, profile_id: int) -> list[ProfileMod]:
+    """Get all mods for a profile.
+
+    Args:
+        conn: Database connection
+        profile_id: ID of the profile
+
+    Returns:
+        List of ProfileMod entries
+    """
+    cursor = conn.execute(
+        "SELECT mod_path, enabled FROM profile_mods WHERE profile_id = ?",
+        (profile_id,),
+    )
+    return [
+        ProfileMod(mod_path=row[0], enabled=bool(row[1]))
+        for row in cursor.fetchall()
+    ]

@@ -114,3 +114,56 @@ def test_delete_profile_not_found_raises():
         with pytest.raises(ProfileNotFoundError):
             delete_profile(conn, "nonexistent")
         conn.close()
+
+
+# Tests for snapshot and mod retrieval
+from s4lt.organize.profiles import save_profile_snapshot, get_profile_mods, ProfileMod
+
+
+def test_save_profile_snapshot():
+    """save_profile_snapshot should save current mod states."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = Path(tmpdir) / "test.db"
+        init_db(db_path)
+        conn = get_connection(db_path)
+
+        # Create mods directory with some files
+        mods_path = Path(tmpdir) / "Mods"
+        mods_path.mkdir()
+        (mods_path / "enabled.package").write_bytes(b"DBPF")
+        (mods_path / "disabled.package.disabled").write_bytes(b"DBPF")
+
+        profile = create_profile(conn, "snapshot")
+        save_profile_snapshot(conn, profile.id, mods_path)
+
+        mods = get_profile_mods(conn, profile.id)
+        assert len(mods) == 2
+
+        enabled = [m for m in mods if m.enabled]
+        disabled = [m for m in mods if not m.enabled]
+        assert len(enabled) == 1
+        assert len(disabled) == 1
+        conn.close()
+
+
+def test_get_profile_mods():
+    """get_profile_mods should return mods for a profile."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = Path(tmpdir) / "test.db"
+        init_db(db_path)
+        conn = get_connection(db_path)
+
+        profile = create_profile(conn, "test")
+        # Manually insert some profile mods
+        conn.execute(
+            "INSERT INTO profile_mods (profile_id, mod_path, enabled) VALUES (?, ?, ?)",
+            (profile.id, "test.package", 1),
+        )
+        conn.commit()
+
+        mods = get_profile_mods(conn, profile.id)
+
+        assert len(mods) == 1
+        assert mods[0].mod_path == "test.package"
+        assert mods[0].enabled is True
+        conn.close()
