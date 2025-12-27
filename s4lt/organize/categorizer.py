@@ -1,5 +1,7 @@
 """Mod categorization by resource type analysis."""
 
+import sqlite3
+from collections import Counter
 from enum import Enum
 
 
@@ -55,3 +57,47 @@ TYPE_TO_CATEGORY: dict[int, ModCategory] = {
     0x025ED6F4: ModCategory.TUNING,     # SimData
     0x545AC67A: ModCategory.TUNING,     # CombinedTuning
 }
+
+
+def categorize_mod(conn: sqlite3.Connection, mod_id: int) -> ModCategory:
+    """Determine category for a mod based on its resources.
+
+    Algorithm:
+    1. Count resources by category
+    2. Pick category with highest count
+    3. On tie, use priority to break
+
+    Args:
+        conn: Database connection
+        mod_id: ID of the mod to categorize
+
+    Returns:
+        ModCategory for the mod
+    """
+    cursor = conn.execute(
+        "SELECT type_id FROM resources WHERE mod_id = ?",
+        (mod_id,)
+    )
+    type_ids = [row[0] for row in cursor.fetchall()]
+
+    if not type_ids:
+        return ModCategory.UNKNOWN
+
+    # Count resources by category
+    category_counts: Counter[ModCategory] = Counter()
+    for type_id in type_ids:
+        category = TYPE_TO_CATEGORY.get(type_id, ModCategory.UNKNOWN)
+        category_counts[category] += 1
+
+    if not category_counts:
+        return ModCategory.UNKNOWN
+
+    # Find max count
+    max_count = max(category_counts.values())
+    candidates = [cat for cat, count in category_counts.items() if count == max_count]
+
+    if len(candidates) == 1:
+        return candidates[0]
+
+    # Tiebreaker: highest priority wins
+    return max(candidates, key=lambda c: CATEGORY_PRIORITY[c])
