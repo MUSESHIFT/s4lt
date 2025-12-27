@@ -9,6 +9,7 @@ from s4lt.tray.exceptions import (
 from s4lt.tray.scanner import discover_tray_items, TrayItemType
 from s4lt.tray.trayitem import parse_trayitem, TrayItemMeta
 from s4lt.tray.thumbnails import extract_thumbnail, save_thumbnail, get_image_format
+from s4lt.tray.item import TrayItem
 
 __all__ = [
     # Exceptions
@@ -26,4 +27,6 @@ __all__ = [
     "extract_thumbnail",
     "save_thumbnail",
     "get_image_format",
+    # High-level API
+    "TrayItem",
 ]
