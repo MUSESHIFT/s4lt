@@ -4,9 +4,31 @@ import sqlite3
 from dataclasses import dataclass, field
 
 # Resource types by severity
-HIGH_SEVERITY_TYPES = {"CASPart", "Geometry", "DDS", "PNG", "DST"}
-MEDIUM_SEVERITY_TYPES = {"Tuning", "SimData", "CombinedTuning"}
-LOW_SEVERITY_TYPES = {"StringTable", "Thumbnail", "ThumbnailAlt"}
+HIGH_SEVERITY_TYPES = {
+    # CAS Parts - visual breakage likely
+    "CASPart", "Geometry", "BlendGeometry", "Skintone", "BoneDelta",
+    "Sculpt", "RegionMap", "SimPreset", "CASPreset",
+    # Textures - visual breakage likely
+    "CASTexture", "DDS", "DST", "RLE2Image", "RLESImage", "LRLEImage",
+    # 3D Models
+    "Model", "ModelLOD", "Rig", "MaterialDefinition",
+}
+MEDIUM_SEVERITY_TYPES = {
+    # Tuning - gameplay conflicts
+    "Tuning", "SimData", "CombinedTuning", "CombinedBinaryTuning",
+    "ObjectTuning", "ObjectModifiers",
+    # Specific tuning types
+    "Buff", "Trait", "Interaction", "Loot",
+    # Catalog objects
+    "ObjectDefinition", "ObjectCatalog",
+}
+LOW_SEVERITY_TYPES = {
+    # Thumbnails - usually safe
+    "StringTable",
+    "CASPartThumbnail", "ObjectThumbnail", "BodyPartThumbnail",
+    "SimThumbnail", "SimPresetThumbnail", "HouseholdThumbnail",
+    "LotPreviewThumbnail", "ThumbnailCache",
+}
 
 
 @dataclass

@@ -1,0 +1,1 @@
+"""Tray module tests."""
