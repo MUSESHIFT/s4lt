@@ -187,5 +187,15 @@ def profile_delete(name: str):
     run_profile_delete(name)
 
 
+@cli.command()
+@click.option("--host", default="127.0.0.1", help="Host to bind to")
+@click.option("--port", default=8000, help="Port to bind to")
+@click.option("--reload", is_flag=True, help="Auto-reload on changes")
+def serve(host: str, port: int, reload: bool):
+    """Start the web UI server."""
+    from s4lt.cli.commands.serve import run_serve
+    run_serve(host=host, port=port, reload=reload)
+
+
 if __name__ == "__main__":
     cli()
