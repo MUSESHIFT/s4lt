@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - S4LT{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold mb-8">Dashboard</h1>
+
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <div class="text-gray-400 text-sm">Total Mods</div>
+        <div class="text-3xl font-bold text-blue-400">{{ stats.total_mods }}</div>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <div class="text-gray-400 text-sm">Resources</div>
+        <div class="text-3xl font-bold text-green-400">{{ "{:,}".format(stats.total_resources) }}</div>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <div class="text-gray-400 text-sm">Profiles</div>
+        <div class="text-3xl font-bold text-purple-400">{{ stats.total_profiles }}</div>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <div class="text-gray-400 text-sm">Broken</div>
+        <div class="text-3xl font-bold {% if stats.broken_mods > 0 %}text-red-400{% else %}text-gray-400{% endif %}">{{ stats.broken_mods }}</div>
+    </div>
+</div>
+
+<!-- Status -->
+<div class="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-8">
+    <h2 class="text-xl font-bold mb-4">Status</h2>
+    <div class="space-y-2">
+        <div class="flex justify-between">
+            <span class="text-gray-400">Mods Folder:</span>
+            <span class="text-gray-100">{{ mods_path }}</span>
+        </div>
+        <div class="flex justify-between">
+            <span class="text-gray-400">Mode:</span>
+            <span class="{% if is_vanilla %}text-yellow-400{% else %}text-green-400{% endif %}">
+                {% if is_vanilla %}Vanilla{% else %}Normal{% endif %}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+    <h2 class="text-xl font-bold mb-4">Quick Actions</h2>
+    <div class="flex flex-wrap gap-4">
+        <button
+            hx-post="/api/scan"
+            hx-swap="none"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded font-medium">
+            <span class="htmx-indicator">Scanning...</span>
+            <span>Scan Mods</span>
+        </button>
+        <button
+            hx-post="/api/vanilla/toggle"
+            hx-swap="outerHTML"
+            hx-target="body"
+            class="px-4 py-2 {% if is_vanilla %}bg-green-600 hover:bg-green-700{% else %}bg-yellow-600 hover:bg-yellow-700{% endif %} rounded font-medium">
+            {% if is_vanilla %}Exit Vanilla Mode{% else %}Enter Vanilla Mode{% endif %}
+        </button>
+    </div>
+</div>
+{% endblock %}

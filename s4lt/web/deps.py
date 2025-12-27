@@ -5,13 +5,16 @@ from pathlib import Path
 from typing import Generator
 
 from s4lt.config.settings import get_settings, DATA_DIR, DB_PATH
-from s4lt.db.schema import init_db, get_connection
+from s4lt.db.schema import init_db
 
 
 def get_db() -> Generator[sqlite3.Connection, None, None]:
     """Get database connection dependency."""
     init_db(DB_PATH)
-    conn = get_connection(DB_PATH)
+    # Use check_same_thread=False for async FastAPI routes
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.row_factory = sqlite3.Row
     try:
         yield conn
     finally:

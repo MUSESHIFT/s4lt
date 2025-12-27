@@ -1,9 +1,9 @@
 """FastAPI application factory."""
 
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from pathlib import Path
+
+from s4lt.web.routers import dashboard
 
 
 def create_app() -> FastAPI:
@@ -14,8 +14,7 @@ def create_app() -> FastAPI:
         version="0.4.0",
     )
 
-    # Templates directory
-    templates_dir = Path(__file__).parent / "templates"
-    templates_dir.mkdir(exist_ok=True)
+    # Include routers
+    app.include_router(dashboard.router)
 
     return app
