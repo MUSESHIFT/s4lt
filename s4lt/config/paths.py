@@ -45,3 +45,25 @@ def find_mods_folder(search_paths: list[str] | None = None) -> Path | None:
             return mods_path
 
     return None
+
+
+def find_tray_folder(search_paths: list[str] | None = None) -> Path | None:
+    """Find the Tray folder by checking common locations.
+
+    Args:
+        search_paths: Paths to check (defaults to SEARCH_PATHS)
+
+    Returns:
+        Path to Tray folder if found, None otherwise
+    """
+    if search_paths is None:
+        search_paths = SEARCH_PATHS
+
+    for path_template in search_paths:
+        base_path = expand_path(path_template)
+        tray_path = base_path / "Tray"
+
+        if tray_path.is_dir():
+            return tray_path
+
+    return None
