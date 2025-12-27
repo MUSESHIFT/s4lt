@@ -1,5 +1,8 @@
 """Tests for mod sorter."""
 
+import tempfile
+from pathlib import Path
+
 from s4lt.organize.sorter import extract_creator, normalize_creator
 
 
@@ -29,3 +32,58 @@ def test_normalize_creator():
     assert normalize_creator("SIMSY") == "Simsy"
     assert normalize_creator("simsy") == "Simsy"
     assert normalize_creator("SimsyCreator") == "Simsycreator"
+
+
+# Tests for organize_by_type
+from s4lt.db.schema import init_db, get_connection
+from s4lt.db.operations import upsert_mod, insert_resource
+from s4lt.organize.sorter import organize_by_type, MoveOp
+
+
+def test_organize_by_type_dry_run():
+    """organize_by_type dry run should not move files."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = Path(tmpdir) / "test.db"
+        init_db(db_path)
+        conn = get_connection(db_path)
+
+        mods_path = Path(tmpdir) / "Mods"
+        mods_path.mkdir()
+        mod_file = mods_path / "cas.package"
+        mod_file.write_bytes(b"DBPF")
+
+        # Add to DB with CAS resources
+        mod_id = upsert_mod(conn, "cas.package", "cas.package", 100, 1.0, "hash", 1)
+        insert_resource(conn, mod_id, 0x034AEECB, 0, 1, "CASPart", None, 10, 20)
+
+        result = organize_by_type(conn, mods_path, dry_run=True)
+
+        # File should NOT move in dry run
+        assert mod_file.exists()
+        assert len(result.moves) == 1
+        assert result.moves[0].target == mods_path / "CAS" / "cas.package"
+        conn.close()
+
+
+def test_organize_by_type_moves_files():
+    """organize_by_type should move files to category folders."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = Path(tmpdir) / "test.db"
+        init_db(db_path)
+        conn = get_connection(db_path)
+
+        mods_path = Path(tmpdir) / "Mods"
+        mods_path.mkdir()
+        mod_file = mods_path / "cas.package"
+        mod_file.write_bytes(b"DBPF")
+
+        mod_id = upsert_mod(conn, "cas.package", "cas.package", 100, 1.0, "hash", 1)
+        insert_resource(conn, mod_id, 0x034AEECB, 0, 1, "CASPart", None, 10, 20)
+
+        result = organize_by_type(conn, mods_path, dry_run=False)
+
+        # File should move
+        assert not mod_file.exists()
+        assert (mods_path / "CAS" / "cas.package").exists()
+        assert len(result.moves) == 1
+        conn.close()
