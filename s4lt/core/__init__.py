@@ -12,6 +12,7 @@ from s4lt.core.types import get_type_name, RESOURCE_TYPES
 from s4lt.core.package import Package
 from s4lt.core.resource import Resource
 from s4lt.core.index import IndexEntry
+from s4lt.core.compression import compress, decompress
 
 __all__ = [
     # Exceptions
@@ -28,4 +29,7 @@ __all__ = [
     "Package",
     "Resource",
     "IndexEntry",
+    # Compression
+    "compress",
+    "decompress",
 ]
