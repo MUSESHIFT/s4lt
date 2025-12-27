@@ -2,6 +2,7 @@
 
 from s4lt.mods.scanner import discover_packages, categorize_changes
 from s4lt.mods.indexer import index_package, compute_hash, extract_tuning_name
+from s4lt.mods.conflicts import find_conflicts, ConflictCluster
 
 __all__ = [
     "discover_packages",
@@ -9,4 +10,6 @@ __all__ = [
     "index_package",
     "compute_hash",
     "extract_tuning_name",
+    "find_conflicts",
+    "ConflictCluster",
 ]
