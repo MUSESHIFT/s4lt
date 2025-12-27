@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS mods (
     resource_count INTEGER,
     scan_time REAL,
     broken INTEGER DEFAULT 0,
-    error_message TEXT
+    error_message TEXT,
+    category TEXT
 );
 
 -- Resources inside packages
@@ -42,6 +43,24 @@ CREATE TABLE IF NOT EXISTS config (
     key TEXT PRIMARY KEY,
     value TEXT
 );
+
+-- Profiles for mod configurations
+CREATE TABLE IF NOT EXISTS profiles (
+    id INTEGER PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    created_at REAL NOT NULL,
+    is_auto INTEGER DEFAULT 0
+);
+
+-- Mods in each profile
+CREATE TABLE IF NOT EXISTS profile_mods (
+    id INTEGER PRIMARY KEY,
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    mod_path TEXT NOT NULL,
+    enabled INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_profile_mods_profile ON profile_mods(profile_id);
 """
 
 
