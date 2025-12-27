@@ -1,5 +1,6 @@
 """CC tracking - TGI extraction and classification."""
 
+import sqlite3
 import struct
 from dataclasses import dataclass
 from pathlib import Path
@@ -103,3 +104,97 @@ def extract_tgis_from_tray_item(item: TrayItem) -> list[TGI]:
             all_tgis.extend(tgis)
 
     return list(set(all_tgis))
+
+
+def classify_tgis(
+    tgis: list[TGI],
+    ea_conn: sqlite3.Connection,
+    mods_conn: sqlite3.Connection,
+) -> list[CCReference]:
+    """Classify TGIs as EA content, mod CC, or missing.
+
+    Args:
+        tgis: List of TGIs to classify
+        ea_conn: EA database connection
+        mods_conn: Mods database connection
+
+    Returns:
+        List of CCReference with classification
+    """
+    from s4lt.ea.database import EADatabase
+
+    ea_db = EADatabase(ea_conn)
+    results = []
+
+    for tgi in tgis:
+        # Check EA index first
+        ea_result = ea_db.lookup_instance(tgi.instance_id)
+        if ea_result:
+            results.append(CCReference(tgi=tgi, source="ea"))
+            continue
+
+        # Check mods index
+        cursor = mods_conn.execute(
+            """
+            SELECT m.path, m.filename
+            FROM resources r
+            JOIN mods m ON r.mod_id = m.id
+            WHERE r.instance_id = ?
+            LIMIT 1
+            """,
+            (tgi.instance_id,),
+        )
+        row = cursor.fetchone()
+
+        if row:
+            results.append(CCReference(
+                tgi=tgi,
+                source="mod",
+                mod_path=Path(row[0]),
+                mod_name=row[1],
+            ))
+            continue
+
+        # Not found anywhere
+        results.append(CCReference(tgi=tgi, source="missing"))
+
+    return results
+
+
+def get_cc_summary(
+    item: TrayItem,
+    ea_conn: sqlite3.Connection,
+    mods_conn: sqlite3.Connection,
+) -> dict:
+    """Get mod-centric CC summary for a tray item.
+
+    Returns:
+        {
+            "mods": {mod_name: count, ...},
+            "missing_count": int,
+            "ea_count": int,
+            "total": int,
+        }
+    """
+    tgis = extract_tgis_from_tray_item(item)
+    refs = classify_tgis(tgis, ea_conn, mods_conn)
+
+    mods = {}
+    missing_count = 0
+    ea_count = 0
+
+    for ref in refs:
+        if ref.source == "ea":
+            ea_count += 1
+        elif ref.source == "mod":
+            name = ref.mod_name or "Unknown"
+            mods[name] = mods.get(name, 0) + 1
+        else:
+            missing_count += 1
+
+    return {
+        "mods": mods,
+        "missing_count": missing_count,
+        "ea_count": ea_count,
+        "total": len(refs),
+    }
