@@ -150,5 +150,42 @@ def vanilla():
     run_vanilla()
 
 
+@cli.group()
+def profile():
+    """Manage mod profiles."""
+    pass
+
+
+@profile.command("list")
+def profile_list():
+    """List saved profiles."""
+    from s4lt.cli.commands.profile import run_profile_list
+    run_profile_list()
+
+
+@profile.command("save")
+@click.argument("name")
+def profile_save(name: str):
+    """Save current mod state as a profile."""
+    from s4lt.cli.commands.profile import run_profile_save
+    run_profile_save(name)
+
+
+@profile.command("load")
+@click.argument("name")
+def profile_load(name: str):
+    """Load a saved profile."""
+    from s4lt.cli.commands.profile import run_profile_load
+    run_profile_load(name)
+
+
+@profile.command("delete")
+@click.argument("name")
+def profile_delete(name: str):
+    """Delete a saved profile."""
+    from s4lt.cli.commands.profile import run_profile_delete
+    run_profile_delete(name)
+
+
 if __name__ == "__main__":
     cli()
