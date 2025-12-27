@@ -5,6 +5,7 @@ Native Linux tools for Sims 4 mod management. No Wine. No Proton. No bullshit.
 ## Status
 
 **Phase 1: Core Engine** - Complete
+**Phase 2: Mod Scanner** - Complete
 
 ## Features (Planned)
 
@@ -47,13 +48,39 @@ with Package.open("path/to/mod.package") as pkg:
 python -m s4lt.cli.package_info path/to/mod.package
 ```
 
-## Usage (Planned)
+## Phase 2: Mod Scanner
+
+Scan, index, and analyze your Mods folder:
 
 ```bash
-# Coming soon
-s4lt scan              # Scan mods folder
-s4lt conflicts         # Show conflicts
+# First run - detects Mods folder automatically
+s4lt scan
+
+# Show conflicts
+s4lt conflicts
+s4lt conflicts --high  # High severity only
+
+# Find duplicates
+s4lt duplicates
+
+# Package info
+s4lt info CoolHair.package
+```
+
+### Features
+
+- **Full indexing** with human-readable names from tuning XML
+- **Conflict detection** grouped by severity (high/medium/low)
+- **Duplicate detection** - exact matches and content-identical packages
+- **Incremental updates** - only re-indexes changed files
+- **SQLite caching** for fast subsequent operations
+
+## Usage (Future)
+
+```bash
+# Coming in Phase 3+
 s4lt package view X    # View package contents
+s4lt tray list         # List saved Sims/Lots
 ```
 
 ## Development
