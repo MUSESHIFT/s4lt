@@ -5,7 +5,8 @@ from urllib.parse import unquote
 
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
+import io
 
 from s4lt.core import Package, get_type_name
 from s4lt.editor.session import get_session, close_session
@@ -21,7 +22,111 @@ TYPE_TUNING = 0x0333406C
 TYPE_STBL = 0x220557DA
 
 
-# More specific route must come FIRST (before the catch-all {path:path})
+def parse_tgi(tgi: str) -> tuple[int, int, int]:
+    """Parse TGI string into (type_id, group_id, instance_id)."""
+    parts = tgi.split(":")
+    if len(parts) != 3:
+        raise HTTPException(status_code=400, detail="Invalid TGI format")
+    try:
+        return (int(parts[0], 16), int(parts[1], 16), int(parts[2], 16))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid TGI format: hex values required")
+
+
+# API endpoints - must come BEFORE view routes (more specific routes first)
+@router.post("/{path:path}/resource/{tgi}/save")
+async def save_resource(request: Request, path: str, tgi: str):
+    """Save resource changes."""
+    decoded_path = unquote(path)
+    pkg_path = Path(decoded_path)
+
+    if not pkg_path.exists():
+        raise HTTPException(status_code=404, detail="Package not found")
+
+    form = await request.form()
+    content = form.get("content", "")
+
+    session = get_session(str(pkg_path))
+    type_id, group_id, instance_id = parse_tgi(tgi)
+
+    # Convert content back to bytes
+    if type_id == TYPE_TUNING:
+        data = content.encode("utf-8")
+    elif type_id == TYPE_STBL:
+        from s4lt.editor.stbl import text_to_stbl, build_stbl, STBLError
+        try:
+            entries = text_to_stbl(content)
+            data = build_stbl(entries)
+        except STBLError as e:
+            raise HTTPException(status_code=400, detail=f"Invalid STBL format: {e}")
+    else:
+        raise HTTPException(status_code=400, detail="Cannot edit this resource type")
+
+    # Update resource
+    session.update_resource(type_id, group_id, instance_id, data)
+
+    return {"status": "updated", "has_changes": session.has_unsaved_changes}
+
+
+@router.delete("/{path:path}/resource/{tgi}")
+async def delete_resource(path: str, tgi: str):
+    """Delete a resource."""
+    decoded_path = unquote(path)
+    pkg_path = Path(decoded_path)
+
+    if not pkg_path.exists():
+        raise HTTPException(status_code=404, detail="Package not found")
+
+    session = get_session(str(pkg_path))
+    type_id, group_id, instance_id = parse_tgi(tgi)
+
+    session.delete_resource(type_id, group_id, instance_id)
+
+    return {"status": "deleted"}
+
+
+@router.get("/{path:path}/extract/{tgi}")
+async def extract_resource(path: str, tgi: str):
+    """Extract/download a resource."""
+    decoded_path = unquote(path)
+    pkg_path = Path(decoded_path)
+
+    if not pkg_path.exists():
+        raise HTTPException(status_code=404, detail="Package not found")
+
+    session = get_session(str(pkg_path))
+    type_id, group_id, instance_id = parse_tgi(tgi)
+
+    for res in session.resources:
+        if res.type_id == type_id and res.group_id == group_id and res.instance_id == instance_id:
+            data = res.extract()
+            filename = f"{res.type_name}_{instance_id:016X}.bin"
+
+            return StreamingResponse(
+                io.BytesIO(data),
+                media_type="application/octet-stream",
+                headers={"Content-Disposition": f"attachment; filename={filename}"},
+            )
+
+    raise HTTPException(status_code=404, detail="Resource not found")
+
+
+@router.post("/{path:path}/save")
+async def save_package(path: str):
+    """Save all pending changes."""
+    decoded_path = unquote(path)
+    pkg_path = Path(decoded_path)
+
+    if not pkg_path.exists():
+        raise HTTPException(status_code=404, detail="Package not found")
+
+    session = get_session(str(pkg_path))
+    session.save()
+
+    return {"status": "saved"}
+
+
+# View routes - less specific, must come AFTER API routes
 @router.get("/{path:path}/resource/{tgi}")
 async def view_resource(request: Request, path: str, tgi: str):
     """View/edit a single resource."""
@@ -32,18 +137,7 @@ async def view_resource(request: Request, path: str, tgi: str):
         raise HTTPException(status_code=404, detail="Package not found")
 
     session = get_session(str(pkg_path))
-
-    # Parse TGI
-    parts = tgi.split(":")
-    if len(parts) != 3:
-        raise HTTPException(status_code=400, detail="Invalid TGI format")
-
-    try:
-        type_id = int(parts[0], 16)
-        group_id = int(parts[1], 16)
-        instance_id = int(parts[2], 16)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid TGI format: hex values required")
+    type_id, group_id, instance_id = parse_tgi(tgi)
 
     # Find resource
     resource = None
