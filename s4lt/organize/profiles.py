@@ -173,3 +173,63 @@ def get_profile_mods(conn: sqlite3.Connection, profile_id: int) -> list[ProfileM
         ProfileMod(mod_path=row[0], enabled=bool(row[1]))
         for row in cursor.fetchall()
     ]
+
+
+@dataclass
+class SwitchResult:
+    """Result of switching profiles."""
+    enabled: int
+    disabled: int
+
+
+def switch_profile(
+    conn: sqlite3.Connection,
+    name: str,
+    mods_path: Path,
+) -> SwitchResult:
+    """Switch to a profile by applying its mod states.
+
+    Args:
+        conn: Database connection
+        name: Profile name to switch to
+        mods_path: Path to the Mods folder
+
+    Returns:
+        SwitchResult with counts of enabled/disabled mods
+
+    Raises:
+        ProfileNotFoundError: If profile doesn't exist
+    """
+    from s4lt.organize.toggle import enable_mod, disable_mod
+
+    profile = get_profile(conn, name)
+    if profile is None:
+        raise ProfileNotFoundError(f"Profile '{name}' not found")
+
+    profile_mods = get_profile_mods(conn, profile.id)
+    enabled_count = 0
+    disabled_count = 0
+
+    for pm in profile_mods:
+        # Determine current file path (could be .package or .package.disabled)
+        if pm.mod_path.endswith(".disabled"):
+            # Profile has it as disabled, find current path
+            base_path = pm.mod_path[:-9]  # Remove .disabled
+            current_enabled = mods_path / base_path
+            current_disabled = mods_path / pm.mod_path
+        else:
+            current_enabled = mods_path / pm.mod_path
+            current_disabled = mods_path / (pm.mod_path + ".disabled")
+
+        if pm.enabled:
+            # Should be enabled
+            if current_disabled.exists():
+                enable_mod(current_disabled)
+                enabled_count += 1
+        else:
+            # Should be disabled
+            if current_enabled.exists():
+                disable_mod(current_enabled)
+                disabled_count += 1
+
+    return SwitchResult(enabled=enabled_count, disabled=disabled_count)

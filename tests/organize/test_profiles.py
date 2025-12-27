@@ -167,3 +167,40 @@ def test_get_profile_mods():
         assert mods[0].mod_path == "test.package"
         assert mods[0].enabled is True
         conn.close()
+
+
+# Tests for switch_profile
+from s4lt.organize.profiles import switch_profile, SwitchResult
+
+
+def test_switch_profile_enables_and_disables():
+    """switch_profile should apply profile state to filesystem."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = Path(tmpdir) / "test.db"
+        init_db(db_path)
+        conn = get_connection(db_path)
+
+        mods_path = Path(tmpdir) / "Mods"
+        mods_path.mkdir()
+
+        # Create initial state: one enabled, one disabled
+        (mods_path / "a.package").write_bytes(b"DBPF")
+        (mods_path / "b.package.disabled").write_bytes(b"DBPF")
+
+        # Save as profile
+        profile = create_profile(conn, "test")
+        save_profile_snapshot(conn, profile.id, mods_path)
+
+        # Now flip the states
+        (mods_path / "a.package").rename(mods_path / "a.package.disabled")
+        (mods_path / "b.package.disabled").rename(mods_path / "b.package")
+
+        # Switch back to profile
+        result = switch_profile(conn, "test", mods_path)
+
+        # Should restore original state
+        assert (mods_path / "a.package").exists()
+        assert (mods_path / "b.package.disabled").exists()
+        assert result.enabled == 1
+        assert result.disabled == 1
+        conn.close()
