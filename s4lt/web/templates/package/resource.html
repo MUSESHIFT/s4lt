@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}{{ resource.type_name }} - {{ filename }} - S4LT{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <a href="/package/{{ path|urlencode }}" class="text-blue-400 hover:underline">&larr; Back to {{ filename }}</a>
+</div>
+
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h1 class="text-2xl font-bold">{{ resource.type_name }}</h1>
+        <p class="text-gray-400 font-mono text-sm mt-1">{{ tgi }}</p>
+    </div>
+    <div class="flex gap-4">
+        <span class="text-gray-400">{{ "%.1f"|format(resource.size / 1024) }} KB</span>
+        {% if resource.compressed %}
+        <span class="px-2 py-1 bg-blue-600 rounded text-xs">Compressed</span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Validation Errors -->
+{% if validation_errors %}
+<div class="bg-gray-800 rounded-lg p-4 border border-gray-700 mb-6">
+    <h2 class="text-lg font-bold mb-2 text-yellow-400">Validation Issues</h2>
+    <ul class="space-y-1">
+        {% for error in validation_errors %}
+        <li class="text-sm {% if error.level == 'error' %}text-red-400{% else %}text-yellow-400{% endif %}">
+            [{{ error.level|upper }}] {{ error.message }}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<!-- Editor -->
+<div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+    {% if content_type == "xml" %}
+    <div class="border-b border-gray-700 px-4 py-2 flex justify-between items-center">
+        <span class="text-sm text-gray-400">XML Tuning</span>
+        <button
+            hx-post="/api/package/{{ path|urlencode }}/resource/{{ tgi }}/save"
+            hx-include="#editor-content"
+            hx-swap="none"
+            class="px-4 py-1 bg-green-600 hover:bg-green-700 rounded text-sm">
+            Save
+        </button>
+    </div>
+    <textarea
+        id="editor-content"
+        name="content"
+        class="w-full h-96 p-4 bg-gray-900 font-mono text-sm text-gray-100 focus:outline-none resize-y"
+        spellcheck="false">{{ content }}</textarea>
+
+    {% elif content_type == "stbl" %}
+    <div class="border-b border-gray-700 px-4 py-2 flex justify-between items-center">
+        <div class="flex gap-4">
+            <button class="px-3 py-1 bg-gray-700 rounded text-sm" onclick="toggleView('table')">Table</button>
+            <button class="px-3 py-1 bg-gray-600 rounded text-sm" onclick="toggleView('text')">Text</button>
+        </div>
+        <button
+            hx-post="/api/package/{{ path|urlencode }}/resource/{{ tgi }}/save"
+            hx-include="#editor-content"
+            hx-swap="none"
+            class="px-4 py-1 bg-green-600 hover:bg-green-700 rounded text-sm">
+            Save
+        </button>
+    </div>
+    <div id="stbl-text-view">
+        <textarea
+            id="editor-content"
+            name="content"
+            class="w-full h-96 p-4 bg-gray-900 font-mono text-sm text-gray-100 focus:outline-none resize-y"
+            spellcheck="false">{{ content }}</textarea>
+    </div>
+
+    {% else %}
+    <div class="border-b border-gray-700 px-4 py-2">
+        <span class="text-sm text-gray-400">Hex Dump (first 512 bytes)</span>
+    </div>
+    <pre class="p-4 font-mono text-xs text-gray-400 overflow-x-auto">{{ content }}</pre>
+    {% endif %}
+</div>
+
+<!-- Actions -->
+<div class="mt-6 flex gap-4">
+    <a href="/api/package/{{ path|urlencode }}/extract/{{ tgi }}"
+       class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded">
+        Download Resource
+    </a>
+    <button
+        hx-delete="/api/package/{{ path|urlencode }}/resource/{{ tgi }}"
+        hx-confirm="Delete this resource?"
+        hx-swap="none"
+        class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded">
+        Delete
+    </button>
+</div>
+
+<script>
+function toggleView(view) {
+    // Toggle between table and text view for STBL
+    // Simplified - full implementation would convert between formats
+}
+</script>
+{% endblock %}
