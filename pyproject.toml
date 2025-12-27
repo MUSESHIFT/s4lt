@@ -3,10 +3,16 @@ name = "s4lt"
 version = "0.1.0"
 description = "Sims 4 Linux Toolkit"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "click>=8.0",
+    "rich>=13.0",
+]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
+
+[project.scripts]
+s4lt = "s4lt.cli.main:cli"
 
 [build-system]
 requires = ["setuptools>=61.0"]

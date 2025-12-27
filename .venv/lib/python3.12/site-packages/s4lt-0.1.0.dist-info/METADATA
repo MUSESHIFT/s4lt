@@ -3,5 +3,7 @@ Name: s4lt
 Version: 0.1.0
 Summary: Sims 4 Linux Toolkit
 Requires-Python: >=3.11
+Requires-Dist: click>=8.0
+Requires-Dist: rich>=13.0
 Provides-Extra: dev
 Requires-Dist: pytest>=7.0; extra == "dev"
