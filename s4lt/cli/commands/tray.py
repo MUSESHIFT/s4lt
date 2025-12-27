@@ -249,7 +249,27 @@ def run_tray_info(name_or_id: str, json_output: bool = False):
         "has_thumbnail": len(item.list_thumbnails()) > 0,
     }
 
+    # Add CC summary if indexes exist
+    from s4lt.ea import get_ea_db_path, init_ea_db
+    from s4lt.db.schema import get_connection
+    from s4lt.config.settings import DB_PATH
+    from s4lt.tray.cc_tracker import get_cc_summary
+
+    ea_db_path = get_ea_db_path()
+    cc_summary = None
+
+    if ea_db_path.exists() and DB_PATH.exists():
+        ea_conn = init_ea_db(ea_db_path)
+        mods_conn = get_connection(DB_PATH)
+
+        cc_summary = get_cc_summary(item, ea_conn, mods_conn)
+
+        ea_conn.close()
+        mods_conn.close()
+
     if json_output:
+        if cc_summary is not None:
+            info["cc"] = cc_summary
         print(json.dumps(info))
         return
 
@@ -269,6 +289,17 @@ def run_tray_info(name_or_id: str, json_output: bool = False):
         console.print(f"[bold]Thumbnails:[/bold] {len(thumbs)} available")
     else:
         console.print("[dim]No thumbnails found[/dim]")
+
+    # Show CC summary if available
+    if cc_summary is not None:
+        console.print()
+        if cc_summary["mods"]:
+            console.print("[bold]CC Usage:[/bold]")
+            for mod_name, count in sorted(cc_summary["mods"].items()):
+                console.print(f"  {count} items from [cyan]{mod_name}[/cyan]")
+
+        if cc_summary["missing_count"] > 0:
+            console.print(f"[red]Warning: {cc_summary['missing_count']} missing CC[/red]")
 
 
 def run_tray_cc(
