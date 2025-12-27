@@ -117,5 +117,15 @@ def ea_status():
     run_ea_status()
 
 
+@cli.command()
+@click.option("--by-type", is_flag=True, help="Sort by mod category")
+@click.option("--by-creator", is_flag=True, help="Sort by creator name")
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation")
+def organize(by_type: bool, by_creator: bool, yes: bool):
+    """Auto-sort mods into subfolders."""
+    from s4lt.cli.commands.organize import run_organize
+    run_organize(by_type=by_type, by_creator=by_creator, yes=yes)
+
+
 if __name__ == "__main__":
     cli()
