@@ -127,5 +127,28 @@ def organize(by_type: bool, by_creator: bool, yes: bool):
     run_organize(by_type=by_type, by_creator=by_creator, yes=yes)
 
 
+@cli.command()
+@click.argument("pattern", required=False)
+def enable(pattern: str | None):
+    """Enable disabled mods (remove .disabled suffix)."""
+    from s4lt.cli.commands.toggle import run_enable
+    run_enable(pattern=pattern)
+
+
+@cli.command()
+@click.argument("pattern", required=False)
+def disable(pattern: str | None):
+    """Disable mods (add .disabled suffix)."""
+    from s4lt.cli.commands.toggle import run_disable
+    run_disable(pattern=pattern)
+
+
+@cli.command()
+def vanilla():
+    """Toggle vanilla mode (disable/restore all mods)."""
+    from s4lt.cli.commands.toggle import run_vanilla
+    run_vanilla()
+
+
 if __name__ == "__main__":
     cli()
