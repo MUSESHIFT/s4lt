@@ -195,7 +195,54 @@ def test_move_to_sd_checks_space():
         assert len(result.failed_paths) == 1
 
 
-from s4lt.deck.storage import move_to_internal
+from s4lt.deck.storage import move_to_internal, check_symlink_health, SymlinkIssue
+
+
+def test_check_symlink_health_finds_broken():
+    """Should detect broken symlinks."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        mods_path = Path(tmpdir) / "Mods"
+        mods_path.mkdir()
+
+        # Create broken symlink
+        broken = mods_path / "broken.package"
+        broken.symlink_to("/nonexistent/path")
+
+        issues = check_symlink_health(mods_path)
+
+        assert len(issues) == 1
+        assert issues[0].path == broken
+        assert issues[0].reason == "target_missing"
+
+
+def test_check_symlink_health_ok_when_valid():
+    """Should return empty list for valid symlinks."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        mods_path = Path(tmpdir) / "Mods"
+        sd_path = Path(tmpdir) / "SD"
+        mods_path.mkdir()
+        sd_path.mkdir()
+
+        # Create valid symlink
+        target = sd_path / "valid.package"
+        target.write_bytes(b"data")
+        link = mods_path / "valid.package"
+        link.symlink_to(target)
+
+        issues = check_symlink_health(mods_path)
+
+        assert issues == []
+
+
+def test_symlink_issue_dataclass():
+    """SymlinkIssue should hold issue info."""
+    issue = SymlinkIssue(
+        path=Path("/mods/broken.package"),
+        target=Path("/sd/broken.package"),
+        reason="target_missing",
+    )
+    assert issue.path == Path("/mods/broken.package")
+    assert issue.reason == "target_missing"
 
 
 def test_move_to_internal_moves_symlinked_file():

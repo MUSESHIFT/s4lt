@@ -1,5 +1,6 @@
 """SD card storage management."""
 
+import os
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -287,3 +288,44 @@ def move_to_internal(symlink_paths: list[Path], mods_path: Path) -> MoveResult:
         failed_paths=failed_paths,
         bytes_moved=bytes_moved,
     )
+
+
+@dataclass
+class SymlinkIssue:
+    """A problem with a symlinked mod."""
+
+    path: Path
+    target: Path
+    reason: str  # "target_missing", "permission_denied"
+
+
+def check_symlink_health(mods_path: Path) -> list[SymlinkIssue]:
+    """Check all symlinks in mods folder for issues.
+
+    Args:
+        mods_path: Path to Mods folder
+
+    Returns:
+        List of issues found (empty if all OK)
+    """
+    issues = []
+
+    if not mods_path.exists():
+        return issues
+
+    for item in mods_path.iterdir():
+        if not item.is_symlink():
+            continue
+
+        target = Path(os.readlink(item))
+        if not target.is_absolute():
+            target = item.parent / target
+
+        if not target.exists():
+            issues.append(SymlinkIssue(
+                path=item,
+                target=target,
+                reason="target_missing",
+            ))
+
+    return issues
