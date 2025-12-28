@@ -2,6 +2,7 @@
 
 import shutil
 import sys
+from pathlib import Path
 
 import click
 
@@ -16,6 +17,8 @@ def install():
     exe_path = shutil.which("s4lt")
     if exe_path is None:
         exe_path = sys.executable.replace("python", "s4lt")
+        if not Path(exe_path).exists():
+            exe_path = sys.executable  # Fallback to Python itself
 
     if add_to_steam(exe_path):
         console.print("[green]Added S4LT to Steam library.[/green]")

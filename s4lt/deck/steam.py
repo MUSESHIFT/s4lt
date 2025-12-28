@@ -1,5 +1,6 @@
 """Steam library integration."""
 
+import shutil
 import struct
 import zlib
 from dataclasses import dataclass
@@ -151,6 +152,13 @@ def add_to_steam(exe_path: str, home: Path | None = None) -> bool:
         'LaunchOptions': 'serve --open',
     }
 
+    # WARNING: Full merging of existing shortcuts is not yet implemented.
+    # This will overwrite the file with only the S4LT shortcut.
+    # Backup existing shortcuts.vdf before writing
+    if shortcuts_file.exists():
+        backup = shortcuts_file.with_suffix('.vdf.bak')
+        shutil.copy2(shortcuts_file, backup)
+
     # Write shortcuts file
     vdf_data = _build_shortcuts_vdf([shortcut])
     shortcuts_file.write_bytes(vdf_data)
@@ -173,6 +181,13 @@ def remove_from_steam(home: Path | None = None) -> bool:
     shortcuts_file = find_shortcuts_file(home)
     if shortcuts_file is None:
         return False
+
+    # WARNING: Full merging of existing shortcuts is not yet implemented.
+    # This will overwrite the file with empty shortcuts.
+    # Backup existing shortcuts.vdf before writing
+    if shortcuts_file.exists():
+        backup = shortcuts_file.with_suffix('.vdf.bak')
+        shutil.copy2(shortcuts_file, backup)
 
     # Write empty shortcuts (simplified - real impl would preserve others)
     vdf_data = _build_shortcuts_vdf([])
