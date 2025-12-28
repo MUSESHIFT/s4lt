@@ -277,6 +277,9 @@ def move_to_internal(symlink_paths: list[Path], mods_path: Path) -> MoveResult:
             success_count += 1
             bytes_moved += size
         except OSError:
+            # Rollback: recreate symlink if it was deleted but move failed
+            if not symlink.exists() and sd_path.exists():
+                symlink.symlink_to(sd_path)
             failed_paths.append(symlink)
 
     return MoveResult(
