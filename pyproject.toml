@@ -11,10 +11,12 @@ dependencies = [
     "jinja2>=3.1.0",
     "python-multipart>=0.0.6",
     "pillow>=10.0.0",
+    "pywebview>=5.0",
+    "pystray>=0.19",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "httpx>=0.26.0"]
+dev = ["pytest>=7.0", "httpx>=0.26.0", "pyinstaller>=6.0"]
 
 [project.scripts]
 s4lt = "s4lt.cli.main:cli"
