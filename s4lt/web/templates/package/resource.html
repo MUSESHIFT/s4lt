@@ -34,6 +34,16 @@
 </div>
 {% endif %}
 
+{% if can_preview %}
+<!-- Preview -->
+<div class="bg-gray-800 rounded-lg border border-gray-700 p-4 mb-6">
+    <h2 class="text-lg font-bold mb-4">Preview</h2>
+    <img src="/package/{{ path|urlencode }}/resource/{{ tgi }}/preview"
+         alt="Resource preview"
+         class="max-w-full max-h-96 mx-auto">
+</div>
+{% endif %}
+
 <!-- Editor -->
 <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
     {% if content_type == "xml" %}

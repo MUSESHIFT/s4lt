@@ -12,6 +12,7 @@ from s4lt.core import Package, get_type_name
 from s4lt.editor.session import get_session, close_session
 from s4lt.editor.xml_schema import validate_tuning, format_xml
 from s4lt.editor.stbl import parse_stbl, stbl_to_text
+from s4lt.editor.preview import can_preview, get_preview_png
 from s4lt import __version__
 
 router = APIRouter(prefix="/package", tags=["package"])
@@ -126,6 +127,35 @@ async def save_package(path: str):
     return {"status": "saved"}
 
 
+@router.get("/{path:path}/resource/{tgi}/preview")
+async def get_resource_preview(path: str, tgi: str):
+    """Get preview image for a resource."""
+    decoded_path = unquote(path)
+    pkg_path = Path(decoded_path)
+
+    if not pkg_path.exists():
+        raise HTTPException(status_code=404, detail="Package not found")
+
+    session = get_session(str(pkg_path))
+
+    type_id, group_id, instance_id = parse_tgi(tgi)
+
+    for res in session.resources:
+        if res.type_id == type_id and res.group_id == group_id and res.instance_id == instance_id:
+            if not can_preview(type_id):
+                raise HTTPException(status_code=400, detail="Resource type not previewable")
+
+            data = res.extract()
+            png_data = get_preview_png(data, type_id)
+
+            if png_data is None:
+                raise HTTPException(status_code=500, detail="Failed to generate preview")
+
+            return Response(content=png_data, media_type="image/png")
+
+    raise HTTPException(status_code=404, detail="Resource not found")
+
+
 # View routes - less specific, must come AFTER API routes
 @router.get("/{path:path}/resource/{tgi}")
 async def view_resource(request: Request, path: str, tgi: str):
@@ -201,6 +231,7 @@ async def view_resource(request: Request, path: str, tgi: str):
             "content": content,
             "content_type": content_type,
             "validation_errors": validation_errors,
+            "can_preview": can_preview(type_id),
         },
     )
 
