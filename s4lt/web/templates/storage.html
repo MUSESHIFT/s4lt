@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="flex items-center mb-6">
+        <a href="/" class="text-gray-400 hover:text-white mr-4">&larr; Back</a>
+        <h1 class="text-2xl font-bold">Storage Management</h1>
+    </div>
+
+    <!-- Internal Storage Section -->
+    <div class="card bg-gray-800 border border-gray-700 rounded-lg p-4 mb-6">
+        <h2 class="text-lg font-semibold mb-3">
+            Internal Storage
+            {% if storage %}
+            <span class="text-gray-400 font-normal">({{ "%.1f"|format(storage.internal_used_gb) }} GB used)</span>
+            {% endif %}
+        </h2>
+
+        <form id="move-to-sd-form" method="post" action="/storage/move-to-sd">
+            <div class="space-y-2 max-h-64 overflow-y-auto">
+                {% for mod in internal_mods %}
+                <label class="flex items-center p-2 hover:bg-gray-700 rounded cursor-pointer">
+                    <input type="checkbox" name="paths" value="{{ mod.path }}" class="mr-3">
+                    <span class="flex-1">{{ mod.name }}</span>
+                    <span class="text-gray-400">{{ "%.1f"|format(mod.size_mb) }} MB</span>
+                </label>
+                {% else %}
+                <div class="text-gray-500 italic">No mods on internal storage</div>
+                {% endfor %}
+            </div>
+
+            {% if sd_available %}
+            <button type="submit" class="btn bg-blue-600 hover:bg-blue-700 mt-4 px-4 py-2 rounded">
+                Move to SD Card &rarr;
+            </button>
+            {% else %}
+            <div class="text-gray-500 mt-4">Insert SD card to move mods</div>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- SD Card Section -->
+    {% if sd_available %}
+    <div class="card bg-gray-800 border border-gray-700 rounded-lg p-4">
+        <h2 class="text-lg font-semibold mb-3">
+            SD Card: {{ sd_name }}
+            {% if storage %}
+            <span class="text-gray-400 font-normal">({{ "%.1f"|format(storage.sd_used_gb) }} GB used)</span>
+            {% endif %}
+        </h2>
+
+        <form id="move-to-internal-form" method="post" action="/storage/move-to-internal">
+            <div class="space-y-2 max-h-64 overflow-y-auto">
+                {% for mod in sd_mods %}
+                <label class="flex items-center p-2 hover:bg-gray-700 rounded cursor-pointer">
+                    <input type="checkbox" name="paths" value="{{ mod.path }}" class="mr-3">
+                    <span class="flex-1">{{ mod.name }}</span>
+                    <span class="text-gray-400">{{ "%.1f"|format(mod.size_mb) }} MB</span>
+                </label>
+                {% else %}
+                <div class="text-gray-500 italic">No mods on SD card</div>
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="btn bg-gray-600 hover:bg-gray-500 mt-4 px-4 py-2 rounded">
+                &larr; Move to Internal
+            </button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
-from s4lt.web.routers import dashboard, mods, tray, profiles, api, package
+from s4lt.web.routers import dashboard, mods, tray, profiles, api, package, storage
 from s4lt.deck.detection import is_steam_deck
 
 
@@ -39,5 +39,6 @@ def create_app() -> FastAPI:
     app.include_router(profiles.router)
     app.include_router(api.router)
     app.include_router(package.router)
+    app.include_router(storage.router)
 
     return app
