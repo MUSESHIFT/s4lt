@@ -13,6 +13,7 @@ from s4lt.editor.session import get_session, close_session
 from s4lt.editor.xml_schema import validate_tuning, format_xml
 from s4lt.editor.stbl import parse_stbl, stbl_to_text
 from s4lt.editor.preview import can_preview, get_preview_png
+from s4lt.editor.merge import find_conflicts, merge_packages
 from s4lt import __version__
 
 router = APIRouter(prefix="/package", tags=["package"])
@@ -154,6 +155,65 @@ async def get_resource_preview(path: str, tgi: str):
             return Response(content=png_data, media_type="image/png")
 
     raise HTTPException(status_code=404, detail="Resource not found")
+
+
+# Merge routes - specific paths, must come BEFORE generic path routes
+@router.get("/merge")
+async def merge_page(request: Request):
+    """Merge packages page."""
+    return templates.TemplateResponse(
+        request,
+        "package/merge.html",
+        {
+            "active": "package",
+            "version": __version__,
+        },
+    )
+
+
+@router.post("/merge/check")
+async def check_merge_conflicts(request: Request):
+    """Check for merge conflicts."""
+    form = await request.form()
+    paths = form.getlist("paths")
+
+    if len(paths) < 2:
+        return {"error": "Need at least 2 packages"}
+
+    conflicts = find_conflicts(paths)
+
+    return {
+        "conflicts": [
+            {
+                "tgi": f"{c.type_id:08X}:{c.group_id:08X}:{c.instance_id:016X}",
+                "sources": c.sources,
+            }
+            for c in conflicts
+        ]
+    }
+
+
+@router.post("/merge/execute")
+async def execute_merge(request: Request):
+    """Execute package merge."""
+    form = await request.form()
+    paths = form.getlist("paths")
+    output = form.get("output")
+    resolutions_json = form.get("resolutions", "{}")
+
+    import json
+    resolutions_raw = json.loads(resolutions_json)
+
+    # Convert string TGIs to tuples
+    resolutions = {}
+    for tgi_str, source in resolutions_raw.items():
+        parts = tgi_str.split(":")
+        tgi = (int(parts[0], 16), int(parts[1], 16), int(parts[2], 16))
+        resolutions[tgi] = source
+
+    merge_packages(paths, output, resolutions)
+
+    return {"status": "merged", "output": output}
 
 
 # View routes - less specific, must come AFTER API routes
