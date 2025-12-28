@@ -193,3 +193,44 @@ def test_move_to_sd_checks_space():
 
         assert result.success_count == 0
         assert len(result.failed_paths) == 1
+
+
+from s4lt.deck.storage import move_to_internal
+
+
+def test_move_to_internal_moves_symlinked_file():
+    """Should move file back from SD and remove symlink."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        mods_path = Path(tmpdir) / "Mods"
+        sd_path = Path(tmpdir) / "SD"
+        mods_path.mkdir()
+        sd_path.mkdir()
+
+        # Create file on SD with symlink
+        sd_file = sd_path / "test.package"
+        sd_file.write_bytes(b"test data")
+        symlink = mods_path / "test.package"
+        symlink.symlink_to(sd_file)
+
+        result = move_to_internal([symlink], mods_path)
+
+        assert result.success_count == 1
+        assert not symlink.is_symlink()
+        assert symlink.is_file()
+        assert symlink.read_bytes() == b"test data"
+        assert not sd_file.exists()
+
+
+def test_move_to_internal_ignores_non_symlinks():
+    """Should skip files that aren't symlinks."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        mods_path = Path(tmpdir) / "Mods"
+        mods_path.mkdir()
+
+        regular_file = mods_path / "regular.package"
+        regular_file.write_bytes(b"data")
+
+        result = move_to_internal([regular_file], mods_path)
+
+        assert result.success_count == 0
+        assert len(result.failed_paths) == 1

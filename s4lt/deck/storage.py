@@ -228,3 +228,59 @@ def move_to_sd(mod_paths: list[Path], sd_mods_path: Path) -> MoveResult:
         failed_paths=failed_paths,
         bytes_moved=bytes_moved,
     )
+
+
+def move_to_internal(symlink_paths: list[Path], mods_path: Path) -> MoveResult:
+    """Move mods back from SD card to internal storage.
+
+    Args:
+        symlink_paths: List of symlinks to resolve and move back
+        mods_path: Internal Mods folder path
+
+    Returns:
+        MoveResult with operation statistics
+    """
+    success_count = 0
+    failed_paths = []
+    bytes_moved = 0
+
+    for symlink in symlink_paths:
+        if not symlink.is_symlink():
+            failed_paths.append(symlink)
+            continue
+
+        # Resolve symlink to get SD location
+        sd_path = symlink.resolve()
+        if not sd_path.exists():
+            failed_paths.append(symlink)
+            continue
+
+        size = _get_size(sd_path)
+
+        # Check available space on internal
+        try:
+            usage = shutil.disk_usage(mods_path)
+            if usage.free < size:
+                failed_paths.append(symlink)
+                continue
+        except OSError:
+            failed_paths.append(symlink)
+            continue
+
+        try:
+            # Remove symlink
+            symlink.unlink()
+
+            # Move from SD to internal
+            shutil.move(str(sd_path), str(symlink))
+
+            success_count += 1
+            bytes_moved += size
+        except OSError:
+            failed_paths.append(symlink)
+
+    return MoveResult(
+        success_count=success_count,
+        failed_paths=failed_paths,
+        bytes_moved=bytes_moved,
+    )
