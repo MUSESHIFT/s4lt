@@ -197,5 +197,62 @@ def serve(host: str, port: int, reload: bool):
     run_serve(host=host, port=port, reload=reload)
 
 
+@cli.group()
+def package():
+    """View, edit, merge, and split .package files."""
+    pass
+
+
+@package.command("view")
+@click.argument("file")
+@click.option("--type", "type_filter", help="Filter by resource type")
+@click.option("--json", "json_output", is_flag=True, help="Output as JSON")
+def package_view(file: str, type_filter: str | None, json_output: bool):
+    """View package contents."""
+    from s4lt.cli.commands.package import run_view
+    run_view(file, type_filter, json_output)
+
+
+@package.command("extract")
+@click.argument("file")
+@click.argument("tgi", required=False)
+@click.option("--type", "type_filter", help="Extract all of type")
+@click.option("--output", "-o", "output_dir", help="Output directory")
+@click.option("--all", "all_resources", is_flag=True, help="Extract all resources")
+def package_extract(file: str, tgi: str | None, type_filter: str | None, output_dir: str | None, all_resources: bool):
+    """Extract resources from package."""
+    from s4lt.cli.commands.package import run_extract
+    run_extract(file, tgi, type_filter, output_dir, all_resources)
+
+
+@package.command("edit")
+@click.argument("file")
+def package_edit(file: str):
+    """Open package in web editor."""
+    from s4lt.cli.commands.package import run_edit
+    run_edit(file)
+
+
+@package.command("merge")
+@click.argument("output")
+@click.argument("inputs", nargs=-1, required=True)
+def package_merge(output: str, inputs: tuple[str, ...]):
+    """Merge multiple packages into one."""
+    from s4lt.cli.commands.package import run_merge
+    run_merge(output, list(inputs))
+
+
+@package.command("split")
+@click.argument("file")
+@click.option("--output", "-o", "output_dir", help="Output directory")
+@click.option("--by-type", is_flag=True, default=True, help="Split by resource type")
+@click.option("--by-group", is_flag=True, help="Split by group ID")
+@click.option("--extract-all", is_flag=True, help="Extract as individual files")
+def package_split(file: str, output_dir: str | None, by_type: bool, by_group: bool, extract_all: bool):
+    """Split package into multiple files."""
+    from s4lt.cli.commands.package import run_split
+    run_split(file, output_dir, by_type, by_group, extract_all)
+
+
 if __name__ == "__main__":
     cli()
