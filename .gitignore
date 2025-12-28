@@ -29,3 +29,8 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+
+# AppImage build artifacts
+appimage/AppDir/
+appimage/appimagetool-*.AppImage
+appimage/squashfs-root/
