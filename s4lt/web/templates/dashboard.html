@@ -25,21 +25,29 @@
     </div>
 </div>
 
-<!-- Status -->
-<div class="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-8">
-    <h2 class="text-xl font-bold mb-4">Status</h2>
-    <div class="space-y-2">
-        <div class="flex justify-between">
-            <span class="text-gray-400">Mods Folder:</span>
-            <span class="text-gray-100">{{ mods_path }}</span>
-        </div>
-        <div class="flex justify-between">
-            <span class="text-gray-400">Mode:</span>
-            <span class="{% if is_vanilla %}text-yellow-400{% else %}text-green-400{% endif %}">
-                {% if is_vanilla %}Vanilla{% else %}Normal{% endif %}
-            </span>
+<!-- Status and Storage Widgets -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <!-- Status -->
+    <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <h2 class="text-xl font-bold mb-4">Status</h2>
+        <div class="space-y-2">
+            <div class="flex justify-between">
+                <span class="text-gray-400">Mods Folder:</span>
+                <span class="text-gray-100">{{ mods_path }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-400">Mode:</span>
+                <span class="{% if is_vanilla %}text-yellow-400{% else %}text-green-400{% endif %}">
+                    {% if is_vanilla %}Vanilla{% else %}Normal{% endif %}
+                </span>
+            </div>
         </div>
     </div>
+
+    <!-- Storage Widget -->
+    {% if storage %}
+    {% include "components/storage_widget.html" %}
+    {% endif %}
 </div>
 
 <!-- Quick Actions -->

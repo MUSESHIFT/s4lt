@@ -1,0 +1,34 @@
+<!-- s4lt/web/templates/components/storage_widget.html -->
+<div class="card bg-gray-800 border border-gray-700 rounded-lg p-4">
+    <h3 class="text-lg font-semibold mb-3">Storage</h3>
+
+    <div class="space-y-2 text-sm">
+        <div class="flex justify-between">
+            <span class="text-gray-400">Internal:</span>
+            <span>{{ "%.1f"|format(storage.internal_used_gb) }} GB mods
+                <span class="text-gray-500">({{ "%.0f"|format(storage.internal_free_gb) }} GB free)</span>
+            </span>
+        </div>
+
+        {% if storage.sd_free_bytes > 0 or storage.sd_used_bytes > 0 %}
+        <div class="flex justify-between">
+            <span class="text-gray-400">SD Card:</span>
+            <span>{{ "%.1f"|format(storage.sd_used_gb) }} GB mods
+                <span class="text-gray-500">({{ "%.0f"|format(storage.sd_free_gb) }} GB free)</span>
+            </span>
+        </div>
+        {% else %}
+        <div class="text-gray-500 italic">No SD card detected</div>
+        {% endif %}
+
+        {% if storage.symlink_count > 0 %}
+        <div class="text-gray-500 text-xs mt-1">
+            {{ storage.symlink_count }} mod(s) on SD card
+        </div>
+        {% endif %}
+    </div>
+
+    <a href="/storage" class="btn btn-sm bg-gray-700 hover:bg-gray-600 mt-4 block text-center">
+        Manage Storage
+    </a>
+</div>

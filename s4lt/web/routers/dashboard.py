@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 from pathlib import Path
 
 from s4lt.web.deps import get_db, get_mods_path
+from s4lt.deck.storage import get_storage_summary, get_sd_card_path
 from s4lt import __version__
 
 router = APIRouter()
@@ -37,6 +38,10 @@ async def dashboard(
 
     mods_path = get_mods_path()
 
+    # Get storage summary for the storage widget
+    sd_path = get_sd_card_path()
+    storage = get_storage_summary(mods_path, sd_path) if mods_path else None
+
     return templates.TemplateResponse(
         request,
         "dashboard.html",
@@ -51,5 +56,6 @@ async def dashboard(
             },
             "is_vanilla": is_vanilla,
             "mods_path": str(mods_path) if mods_path else "Not configured",
+            "storage": storage,
         },
     )
