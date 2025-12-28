@@ -197,6 +197,13 @@ def serve(host: str, port: int, reload: bool):
     run_serve(host=host, port=port, reload=reload)
 
 
+@cli.command()
+def desktop():
+    """Launch the desktop application (native window with tray icon)."""
+    from s4lt.desktop.launcher import main
+    main()
+
+
 @cli.group()
 def package():
     """View, edit, merge, and split .package files."""
