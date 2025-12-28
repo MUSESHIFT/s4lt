@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="plumbobGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ade80"/>
+      <stop offset="50%" style="stop-color:#22c55e"/>
+      <stop offset="100%" style="stop-color:#16a34a"/>
+    </linearGradient>
+    <linearGradient id="plumbobLight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#86efac"/>
+      <stop offset="100%" style="stop-color:#4ade80"/>
+    </linearGradient>
+    <linearGradient id="plumbobDark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#22c55e"/>
+      <stop offset="100%" style="stop-color:#15803d"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle (optional, for visibility on dark backgrounds) -->
+  <circle cx="128" cy="128" r="120" fill="#1a1a2e" opacity="0"/>
+
+  <!-- Plumbob diamond shape - 3D faceted look -->
+  <!-- Left facet (lighter) -->
+  <polygon points="128,20 60,110 128,200" fill="url(#plumbobLight)"/>
+  <!-- Right facet (darker) -->
+  <polygon points="128,20 196,110 128,200" fill="url(#plumbobDark)"/>
+  <!-- Center highlight line -->
+  <line x1="128" y1="20" x2="128" y2="200" stroke="#86efac" stroke-width="2" opacity="0.5"/>
+
+  <!-- Top highlight -->
+  <polygon points="128,20 100,60 128,50 156,60" fill="#a7f3d0" opacity="0.6"/>
+
+  <!-- S4LT text -->
+  <text x="128" y="240"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="36"
+        font-weight="bold"
+        fill="#22c55e"
+        text-anchor="middle">S4LT</text>
+</svg>
