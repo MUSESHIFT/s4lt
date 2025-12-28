@@ -147,3 +147,84 @@ def get_storage_summary(mods_path: Path, sd_path: Path | None) -> StorageSummary
         sd_free_bytes=sd_free,
         symlink_count=symlink_count,
     )
+
+
+@dataclass
+class MoveResult:
+    """Result of a move operation."""
+
+    success_count: int
+    failed_paths: list[Path]
+    bytes_moved: int
+
+    @property
+    def all_succeeded(self) -> bool:
+        return len(self.failed_paths) == 0
+
+
+def _get_size(path: Path) -> int:
+    """Get total size of file or directory."""
+    if path.is_file():
+        return path.stat().st_size
+    total = 0
+    for f in path.rglob("*"):
+        if f.is_file():
+            total += f.stat().st_size
+    return total
+
+
+def move_to_sd(mod_paths: list[Path], sd_mods_path: Path) -> MoveResult:
+    """Move mods to SD card and create symlinks.
+
+    Args:
+        mod_paths: List of files/folders to move
+        sd_mods_path: Destination folder on SD card
+
+    Returns:
+        MoveResult with operation statistics
+    """
+    success_count = 0
+    failed_paths = []
+    bytes_moved = 0
+
+    # Ensure destination exists
+    sd_mods_path.mkdir(parents=True, exist_ok=True)
+
+    for source in mod_paths:
+        if not source.exists():
+            failed_paths.append(source)
+            continue
+
+        size = _get_size(source)
+        dest = sd_mods_path / source.name
+
+        # Check available space
+        try:
+            usage = shutil.disk_usage(sd_mods_path)
+            if usage.free < size:
+                failed_paths.append(source)
+                continue
+        except OSError:
+            failed_paths.append(source)
+            continue
+
+        try:
+            # Move to SD card
+            shutil.move(str(source), str(dest))
+
+            # Create symlink in original location
+            source.symlink_to(dest)
+
+            success_count += 1
+            bytes_moved += size
+        except OSError:
+            # Rollback if possible
+            if dest.exists() and not source.exists():
+                shutil.move(str(dest), str(source))
+            failed_paths.append(source)
+
+    return MoveResult(
+        success_count=success_count,
+        failed_paths=failed_paths,
+        bytes_moved=bytes_moved,
+    )

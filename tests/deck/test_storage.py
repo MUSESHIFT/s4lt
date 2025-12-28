@@ -116,3 +116,80 @@ def test_get_storage_summary_with_symlinks():
         assert summary.internal_used_bytes == 1000
         assert summary.sd_used_bytes == 2000
         assert summary.symlink_count == 1
+
+
+from s4lt.deck.storage import MoveResult, move_to_sd
+
+
+def test_move_result_dataclass():
+    """MoveResult should hold operation results."""
+    result = MoveResult(
+        success_count=2,
+        failed_paths=[],
+        bytes_moved=5000,
+    )
+    assert result.success_count == 2
+    assert result.all_succeeded is True
+
+
+def test_move_to_sd_moves_file():
+    """Should move file to SD and create symlink."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        mods_path = Path(tmpdir) / "Mods"
+        sd_path = Path(tmpdir) / "SD/S4LT"
+        mods_path.mkdir()
+        sd_path.mkdir(parents=True)
+
+        # Create test file
+        test_file = mods_path / "test.package"
+        test_file.write_bytes(b"test data")
+
+        result = move_to_sd([test_file], sd_path)
+
+        assert result.success_count == 1
+        assert result.bytes_moved == 9
+        assert (mods_path / "test.package").is_symlink()
+        assert (sd_path / "test.package").exists()
+        assert (mods_path / "test.package").resolve() == sd_path / "test.package"
+
+
+def test_move_to_sd_moves_folder():
+    """Should move folder to SD and create symlink."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        mods_path = Path(tmpdir) / "Mods"
+        sd_path = Path(tmpdir) / "SD/S4LT"
+        mods_path.mkdir()
+        sd_path.mkdir(parents=True)
+
+        # Create test folder with files
+        test_folder = mods_path / "MyMod"
+        test_folder.mkdir()
+        (test_folder / "file1.package").write_bytes(b"data1")
+        (test_folder / "file2.package").write_bytes(b"data2")
+
+        result = move_to_sd([test_folder], sd_path)
+
+        assert result.success_count == 1
+        assert (mods_path / "MyMod").is_symlink()
+        assert (sd_path / "MyMod").is_dir()
+        assert (sd_path / "MyMod" / "file1.package").exists()
+
+
+def test_move_to_sd_checks_space():
+    """Should fail if not enough space on SD."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        mods_path = Path(tmpdir) / "Mods"
+        sd_path = Path(tmpdir) / "SD"
+        mods_path.mkdir()
+        sd_path.mkdir()
+
+        test_file = mods_path / "huge.package"
+        test_file.write_bytes(b"x" * 1000)
+
+        # Mock disk_usage to return no free space
+        with patch("shutil.disk_usage") as mock_usage:
+            mock_usage.return_value = type("Usage", (), {"free": 100})()
+            result = move_to_sd([test_file], sd_path)
+
+        assert result.success_count == 0
+        assert len(result.failed_paths) == 1
