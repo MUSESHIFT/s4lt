@@ -6,6 +6,13 @@
     <title>{% block title %}S4LT{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="/static/deck.css">
+    <script>
+        // Auto-detect Steam Deck mode from cookie
+        if (document.cookie.includes('deck_mode=1')) {
+            document.documentElement.classList.add('deck-mode');
+        }
+    </script>
     <style>
         .htmx-indicator { display: none; }
         .htmx-request .htmx-indicator { display: inline; }

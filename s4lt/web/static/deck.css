@@ -1,0 +1,70 @@
+/* s4lt/web/static/deck.css */
+/* Controller-friendly styles for Steam Deck */
+
+/* Large touch targets */
+.deck-mode .btn,
+.deck-mode button,
+.deck-mode a.btn {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px 24px;
+    font-size: 1.125rem;
+}
+
+.deck-mode .btn-lg {
+    min-height: 64px;
+    min-width: 64px;
+    padding: 16px 32px;
+    font-size: 1.25rem;
+}
+
+/* Visible focus states for D-pad navigation */
+.deck-mode *:focus {
+    outline: 3px solid #60a5fa;
+    outline-offset: 2px;
+}
+
+.deck-mode *:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.deck-mode *:focus-visible {
+    outline: 3px solid #60a5fa;
+    outline-offset: 2px;
+}
+
+/* Larger spacing between interactive elements */
+.deck-mode .card {
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.deck-mode .nav-link {
+    padding: 1rem 1.5rem;
+}
+
+/* Larger form inputs */
+.deck-mode input,
+.deck-mode select,
+.deck-mode textarea {
+    min-height: 48px;
+    font-size: 1rem;
+    padding: 12px;
+}
+
+/* Larger checkboxes */
+.deck-mode input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+}
+
+/* Grid adjustments for smaller screen */
+@media (max-width: 1280px) {
+    .deck-mode .grid-cols-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .deck-mode .grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
