@@ -17,14 +17,18 @@ APPIMAGE_NAME="S4LT-${VERSION}-x86_64.AppImage"
 
 echo "=== Building $APP_NAME $VERSION AppImage ==="
 
-# Step 1: Install/update dependencies
-echo "[1/5] Installing dependencies..."
+# Step 1: Set up virtual environment
+echo "[1/5] Setting up virtual environment..."
 cd "$PROJECT_ROOT"
+if [ ! -d ".venv" ]; then
+    python3 -m venv .venv
+fi
+source .venv/bin/activate
 pip install -e ".[dev]" --quiet
 
 # Step 2: Run PyInstaller
 echo "[2/5] Running PyInstaller..."
-pyinstaller --clean --noconfirm appimage/s4lt.spec
+.venv/bin/pyinstaller --clean --noconfirm appimage/s4lt.spec
 
 # Step 3: Create AppDir structure
 echo "[3/5] Creating AppDir..."
@@ -67,7 +71,8 @@ fi
 # Step 5: Build AppImage
 echo "[5/5] Building AppImage..."
 cd "$SCRIPT_DIR"
-ARCH=x86_64 "$APPIMAGETOOL" --no-appstream AppDir "$PROJECT_ROOT/dist/$APPIMAGE_NAME"
+# Use --appimage-extract-and-run to avoid FUSE requirement
+ARCH=x86_64 "$APPIMAGETOOL" --appimage-extract-and-run --no-appstream AppDir "$PROJECT_ROOT/dist/$APPIMAGE_NAME"
 
 echo ""
 echo "=== Build complete ==="
