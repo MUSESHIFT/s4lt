@@ -254,5 +254,25 @@ def package_split(file: str, output_dir: str | None, by_type: bool, by_group: bo
     run_split(file, output_dir, by_type, by_group, extract_all)
 
 
+@cli.group()
+def steam():
+    """Steam Deck integration."""
+    pass
+
+
+@steam.command()
+def install():
+    """Add S4LT to Steam library."""
+    from s4lt.cli.commands.steam import install as steam_install
+    steam_install.callback()
+
+
+@steam.command()
+def uninstall():
+    """Remove S4LT from Steam library."""
+    from s4lt.cli.commands.steam import uninstall as steam_uninstall
+    steam_uninstall.callback()
+
+
 if __name__ == "__main__":
     cli()
