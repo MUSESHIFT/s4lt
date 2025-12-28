@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=S4LT
+GenericName=Sims 4 Mod Manager
+Comment=Native Linux tools for Sims 4 mod management
+Exec=s4lt
+Icon=s4lt
+Terminal=false
+Type=Application
+Categories=Game;Utility;
+Keywords=sims;mods;cc;custom content;
+StartupWMClass=s4lt

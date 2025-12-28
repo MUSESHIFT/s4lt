@@ -1,0 +1,68 @@
+# AppImageBuilder configuration for S4LT
+# See: https://appimage-builder.readthedocs.io/
+
+version: 1
+script:
+  # Remove any previous build
+  - rm -rf AppDir || true
+  # Run PyInstaller first (from project root)
+  - cd .. && pyinstaller --clean --noconfirm appimage/s4lt.spec
+  # Copy PyInstaller output to AppDir
+  - mkdir -p AppDir/usr/bin
+  - cp -r ../dist/s4lt/* AppDir/usr/bin/
+  # Copy icon
+  - mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+  - cp ../assets/s4lt-icon.png AppDir/usr/share/icons/hicolor/256x256/apps/s4lt.png
+  - cp ../assets/s4lt-icon.png AppDir/s4lt.png
+  # Copy desktop file
+  - cp s4lt.desktop AppDir/s4lt.desktop
+
+AppDir:
+  path: ./AppDir
+
+  app_info:
+    id: com.s4lt.s4lt
+    name: S4LT
+    icon: s4lt
+    version: 0.7.0
+    exec: usr/bin/s4lt
+    exec_args: $@
+
+  apt:
+    arch: amd64
+    sources:
+      - sourceline: 'deb http://archive.ubuntu.com/ubuntu/ jammy main restricted universe multiverse'
+        key_url: 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920D1991BC93C'
+
+    include:
+      - libwebkit2gtk-4.1-0
+      - libgtk-3-0
+      - libayatana-appindicator3-1
+      - gir1.2-ayatanaappindicator3-0.1
+
+  files:
+    exclude:
+      - usr/share/doc
+      - usr/share/man
+      - usr/share/locale
+
+  runtime:
+    env:
+      # Ensure WebKit can find resources
+      GDK_BACKEND: x11
+
+  test:
+    fedora-30:
+      image: appimagecrafters/tests-env:fedora-30
+      command: ./AppRun --help
+    debian-stable:
+      image: appimagecrafters/tests-env:debian-stable
+      command: ./AppRun --help
+    ubuntu-xenial:
+      image: appimagecrafters/tests-env:ubuntu-xenial
+      command: ./AppRun --help
+
+AppImage:
+  arch: x86_64
+  update-information: None
+  sign-key: None
