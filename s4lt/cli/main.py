@@ -274,5 +274,32 @@ def uninstall():
     steam_uninstall.callback()
 
 
+@cli.group(invoke_without_command=True)
+@click.pass_context
+def storage(ctx):
+    """Storage management for Steam Deck."""
+    if ctx.invoked_subcommand is None:
+        # Default to showing summary when no subcommand
+        from s4lt.cli.commands.storage import storage_summary
+        ctx.invoke(storage_summary)
+
+
+@storage.command("summary")
+def storage_summary_cmd():
+    """Show storage summary."""
+    from s4lt.cli.commands.storage import storage_summary
+    storage_summary.callback()
+
+
+@storage.command()
+@click.argument("path")
+@click.option("--to-sd", is_flag=True, help="Move to SD card")
+@click.option("--to-internal", is_flag=True, help="Move to internal storage")
+def move(path: str, to_sd: bool, to_internal: bool):
+    """Move a mod between internal and SD card."""
+    from s4lt.cli.commands.storage import move as storage_move
+    storage_move.callback(path, to_sd, to_internal)
+
+
 if __name__ == "__main__":
     cli()
