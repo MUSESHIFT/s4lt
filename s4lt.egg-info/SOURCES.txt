@@ -21,6 +21,8 @@ s4lt/cli/commands/package.py
 s4lt/cli/commands/profile.py
 s4lt/cli/commands/scan.py
 s4lt/cli/commands/serve.py
+s4lt/cli/commands/steam.py
+s4lt/cli/commands/storage.py
 s4lt/cli/commands/toggle.py
 s4lt/cli/commands/tray.py
 s4lt/config/__init__.py
@@ -38,6 +40,10 @@ s4lt/core/writer.py
 s4lt/db/__init__.py
 s4lt/db/operations.py
 s4lt/db/schema.py
+s4lt/deck/__init__.py
+s4lt/deck/detection.py
+s4lt/deck/steam.py
+s4lt/deck/storage.py
 s4lt/ea/__init__.py
 s4lt/ea/database.py
 s4lt/ea/exceptions.py
@@ -45,6 +51,7 @@ s4lt/ea/paths.py
 s4lt/ea/scanner.py
 s4lt/editor/__init__.py
 s4lt/editor/merge.py
+s4lt/editor/preview.py
 s4lt/editor/session.py
 s4lt/editor/split.py
 s4lt/editor/stbl.py
@@ -78,4 +85,5 @@ s4lt/web/routers/dashboard.py
 s4lt/web/routers/mods.py
 s4lt/web/routers/package.py
 s4lt/web/routers/profiles.py
+s4lt/web/routers/storage.py
 s4lt/web/routers/tray.py
