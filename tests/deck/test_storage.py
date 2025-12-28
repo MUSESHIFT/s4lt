@@ -61,3 +61,58 @@ def test_get_sd_card_path_returns_first_drive():
                 result = get_sd_card_path()
 
         assert result == sd_path
+
+
+from s4lt.deck.storage import StorageSummary, get_storage_summary
+
+
+def test_storage_summary_dataclass():
+    """StorageSummary should hold storage info."""
+    summary = StorageSummary(
+        internal_used_bytes=10_000_000_000,
+        internal_free_bytes=50_000_000_000,
+        sd_used_bytes=5_000_000_000,
+        sd_free_bytes=100_000_000_000,
+        symlink_count=3,
+    )
+    assert summary.internal_used_gb == 10.0
+    assert summary.sd_free_gb == 100.0
+
+
+def test_get_storage_summary_internal_only():
+    """Should calculate storage when no SD card."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        mods_path = Path(tmpdir) / "Mods"
+        mods_path.mkdir()
+
+        # Create some test files
+        (mods_path / "test.package").write_bytes(b"x" * 1000)
+
+        summary = get_storage_summary(mods_path, None)
+
+        assert summary.internal_used_bytes == 1000
+        assert summary.sd_used_bytes == 0
+        assert summary.symlink_count == 0
+
+
+def test_get_storage_summary_with_symlinks():
+    """Should count symlinked mods as SD storage."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        mods_path = Path(tmpdir) / "Mods"
+        sd_path = Path(tmpdir) / "SD"
+        mods_path.mkdir()
+        sd_path.mkdir()
+
+        # Regular file on internal
+        (mods_path / "internal.package").write_bytes(b"x" * 1000)
+
+        # File on SD with symlink
+        sd_file = sd_path / "external.package"
+        sd_file.write_bytes(b"y" * 2000)
+        (mods_path / "external.package").symlink_to(sd_file)
+
+        summary = get_storage_summary(mods_path, sd_path)
+
+        assert summary.internal_used_bytes == 1000
+        assert summary.sd_used_bytes == 2000
+        assert summary.symlink_count == 1
