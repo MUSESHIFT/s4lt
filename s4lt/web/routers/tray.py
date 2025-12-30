@@ -3,15 +3,15 @@
 from fastapi import APIRouter, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import Response
-from pathlib import Path
 
 from s4lt.web.deps import get_tray_path
+from s4lt.web.paths import get_templates_dir
 from s4lt.tray import discover_tray_items, TrayItem, TrayItemType, extract_thumbnail
 from s4lt.tray.trayitem import parse_trayitem
 from s4lt import __version__
 
 router = APIRouter(prefix="/tray", tags=["tray"])
-templates = Jinja2Templates(directory=Path(__file__).parent.parent / "templates")
+templates = Jinja2Templates(directory=get_templates_dir())
 
 
 @router.get("")

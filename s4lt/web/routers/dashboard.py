@@ -3,15 +3,15 @@
 import sqlite3
 from fastapi import APIRouter, Request, Depends
 from fastapi.templating import Jinja2Templates
-from pathlib import Path
 
 from s4lt.web.deps import get_db, get_mods_path
+from s4lt.web.paths import get_templates_dir
 from s4lt.deck.storage import get_storage_summary, get_sd_card_path, check_symlink_health
 from s4lt.organize.categorizer import ModCategory
 from s4lt import __version__
 
 router = APIRouter()
-templates = Jinja2Templates(directory=Path(__file__).parent.parent / "templates")
+templates = Jinja2Templates(directory=get_templates_dir())
 
 
 @router.get("/")

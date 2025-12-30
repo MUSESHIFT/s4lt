@@ -14,10 +14,11 @@ from s4lt.editor.xml_schema import validate_tuning, format_xml
 from s4lt.editor.stbl import parse_stbl, stbl_to_text
 from s4lt.editor.preview import can_preview, get_preview_png
 from s4lt.editor.merge import find_conflicts, merge_packages
+from s4lt.web.paths import get_templates_dir
 from s4lt import __version__
 
 router = APIRouter(prefix="/package", tags=["package"])
-templates = Jinja2Templates(directory=Path(__file__).parent.parent / "templates")
+templates = Jinja2Templates(directory=get_templates_dir())
 
 # Resource type IDs
 TYPE_TUNING = 0x0333406C

@@ -1,6 +1,5 @@
 """Storage management routes."""
 
-from pathlib import Path
 from dataclasses import dataclass
 
 from fastapi import APIRouter, Request
@@ -8,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 
 from s4lt.web.deps import get_mods_path
+from s4lt.web.paths import get_templates_dir
 from s4lt.deck.storage import (
     get_storage_summary,
     get_sd_card_path,
@@ -18,7 +18,7 @@ from s4lt.deck.storage import (
 from s4lt import __version__
 
 router = APIRouter(prefix="/storage", tags=["storage"])
-templates = Jinja2Templates(directory=Path(__file__).parent.parent / "templates")
+templates = Jinja2Templates(directory=get_templates_dir())
 
 
 @dataclass

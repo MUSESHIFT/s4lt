@@ -12,13 +12,14 @@ from fastapi.templating import Jinja2Templates
 from s4lt.config.paths import detect_all_paths, is_steam_deck
 from s4lt.config.settings import get_settings, save_settings, Settings, CONFIG_FILE
 from s4lt.web.deps import get_db
+from s4lt.web.paths import get_templates_dir
 from s4lt import __version__
 
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["setup"])
-templates = Jinja2Templates(directory=Path(__file__).parent.parent / "templates")
+templates = Jinja2Templates(directory=get_templates_dir())
 
 
 def needs_setup() -> bool:

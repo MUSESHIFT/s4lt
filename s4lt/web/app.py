@@ -3,9 +3,9 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from pathlib import Path
 
 from s4lt.web.routers import dashboard, mods, tray, profiles, api, package, storage, setup
+from s4lt.web.paths import get_static_dir
 from s4lt.deck.detection import is_steam_deck
 from s4lt import __version__
 
@@ -19,7 +19,7 @@ def create_app() -> FastAPI:
     )
 
     # Mount static files
-    static_dir = Path(__file__).parent / "static"
+    static_dir = get_static_dir()
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
     # First-run setup redirect middleware

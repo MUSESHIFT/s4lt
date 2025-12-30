@@ -5,9 +5,9 @@ from datetime import datetime
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
-from pathlib import Path
 
 from s4lt.web.deps import get_db, get_mods_path
+from s4lt.web.paths import get_templates_dir
 from s4lt.organize.profiles import (
     list_profiles,
     create_profile,
@@ -20,7 +20,7 @@ from s4lt.organize.exceptions import ProfileExistsError, ProfileNotFoundError
 from s4lt import __version__
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
-templates = Jinja2Templates(directory=Path(__file__).parent.parent / "templates")
+templates = Jinja2Templates(directory=get_templates_dir())
 
 
 @router.get("")
