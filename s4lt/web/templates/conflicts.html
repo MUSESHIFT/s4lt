@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Conflicts - S4LT{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-white mb-2">Conflict Detection</h1>
+    <p class="text-gray-400">Find duplicate resources and conflicting mods</p>
+</div>
+
+{% if report %}
+<!-- Summary -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-gray-800 rounded-lg p-4">
+        <div class="text-gray-400 text-sm">Packages Scanned</div>
+        <div class="text-2xl font-bold text-white">{{ report.packages_scanned }}</div>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-4">
+        <div class="text-gray-400 text-sm">Total Resources</div>
+        <div class="text-2xl font-bold text-white">{{ report.total_resources }}</div>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-4">
+        <div class="text-gray-400 text-sm">Errors</div>
+        <div class="text-2xl font-bold text-red-400">{{ report.error_count }}</div>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-4">
+        <div class="text-gray-400 text-sm">Warnings</div>
+        <div class="text-2xl font-bold text-yellow-400">{{ report.warning_count }}</div>
+    </div>
+</div>
+
+<!-- Scan button -->
+<div class="mb-6">
+    <button onclick="scanConflicts()" id="scanBtn"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+        🔍 Rescan for Conflicts
+    </button>
+</div>
+
+<!-- Conflicts list -->
+{% if report.conflicts %}
+<div class="space-y-4">
+    {% for conflict in report.conflicts %}
+    <div class="bg-gray-800 rounded-lg p-4 border-l-4
+        {% if conflict.severity.value == 'error' %}border-red-500
+        {% elif conflict.severity.value == 'warning' %}border-yellow-500
+        {% else %}border-blue-500{% endif %}">
+
+        <div class="flex items-start justify-between mb-3">
+            <div>
+                <span class="px-2 py-1 rounded text-xs font-bold
+                    {% if conflict.severity.value == 'error' %}bg-red-900 text-red-300
+                    {% elif conflict.severity.value == 'warning' %}bg-yellow-900 text-yellow-300
+                    {% else %}bg-blue-900 text-blue-300{% endif %}">
+                    {{ conflict.severity.value | upper }}
+                </span>
+                <span class="text-white font-medium ml-2">{{ conflict.description }}</span>
+            </div>
+            <div class="text-gray-400 text-sm">
+                {{ conflict.resource_type_name }}
+            </div>
+        </div>
+
+        <div class="text-gray-400 text-sm mb-3">
+            Instance: <code class="bg-gray-900 px-1 rounded">0x{{ '%016X' % conflict.instance_id }}</code>
+        </div>
+
+        <div class="text-gray-300 text-sm mb-3">
+            <div class="font-medium mb-1">Found in:</div>
+            <ul class="list-disc list-inside space-y-1">
+                {% for pkg in conflict.packages %}
+                <li class="font-mono text-xs">{{ pkg.split('/')[-1] }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="flex gap-2">
+            <button onclick="resolveConflict({{ loop.index0 }}, 'keep_first')"
+                    class="bg-green-600 hover:bg-green-700 text-white text-sm px-3 py-1 rounded">
+                Keep First
+            </button>
+            <button onclick="resolveConflict({{ loop.index0 }}, 'disable_all')"
+                    class="bg-yellow-600 hover:bg-yellow-700 text-white text-sm px-3 py-1 rounded">
+                Disable All
+            </button>
+            <button onclick="resolveConflict({{ loop.index0 }}, 'ignore')"
+                    class="bg-gray-600 hover:bg-gray-700 text-white text-sm px-3 py-1 rounded">
+                Ignore
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="bg-green-900/30 border border-green-700 rounded-lg p-6 text-center">
+    <div class="text-green-400 text-4xl mb-2">✓</div>
+    <div class="text-green-300 text-lg font-medium">No Conflicts Detected</div>
+    <p class="text-green-400/70 mt-1">Your mods folder looks clean!</p>
+</div>
+{% endif %}
+
+<!-- Scan errors -->
+{% if report.scan_errors %}
+<div class="mt-6">
+    <h2 class="text-lg font-bold text-white mb-3">Scan Errors</h2>
+    <div class="bg-red-900/30 border border-red-700 rounded-lg p-4">
+        <ul class="text-red-300 text-sm space-y-1">
+            {% for error in report.scan_errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="bg-gray-800 rounded-lg p-8 text-center">
+    <div class="text-gray-500 text-lg mb-2">No scan results</div>
+    <p class="text-gray-600 mb-4">
+        Configure your Mods folder in <a href="/settings" class="text-blue-400">Settings</a>
+    </p>
+</div>
+{% endif %}
+
+<script>
+function scanConflicts() {
+    const btn = document.getElementById('scanBtn');
+    btn.disabled = true;
+    btn.textContent = 'Scanning...';
+
+    fetch('/conflicts/scan', {method: 'POST'})
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Scan failed: ' + data.error);
+                btn.disabled = false;
+                btn.textContent = '🔍 Rescan for Conflicts';
+            }
+        })
+        .catch(e => {
+            alert('Scan failed: ' + e);
+            btn.disabled = false;
+            btn.textContent = '🔍 Rescan for Conflicts';
+        });
+}
+
+function resolveConflict(index, action) {
+    fetch('/conflicts/' + index + '/resolve?action=' + action, {method: 'POST'})
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Resolution not yet implemented');
+            }
+        });
+}
+</script>
+{% endblock %}

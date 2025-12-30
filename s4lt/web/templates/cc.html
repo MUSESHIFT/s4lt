@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}CC Browser - S4LT{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-white mb-2">CC Browser</h1>
+    <p class="text-gray-400">Browse and manage your Custom Content</p>
+</div>
+
+<!-- Filters -->
+<div class="bg-gray-800 rounded-lg p-4 mb-6">
+    <form method="get" class="flex flex-wrap gap-4 items-end">
+        <!-- Category Filter -->
+        <div>
+            <label class="block text-sm text-gray-400 mb-1">Category</label>
+            <select name="type" onchange="this.form.submit()"
+                    class="bg-gray-700 text-white rounded px-3 py-2 border border-gray-600">
+                <option value="">All ({{ total_count }})</option>
+                <option value="cas" {% if current_type == 'cas' %}selected{% endif %}>
+                    CAS CC ({{ category_counts.get('cas', 0) }})
+                </option>
+                <option value="buildbuy" {% if current_type == 'buildbuy' %}selected{% endif %}>
+                    Build/Buy ({{ category_counts.get('buildbuy', 0) }})
+                </option>
+                <option value="tuning" {% if current_type == 'tuning' %}selected{% endif %}>
+                    Tuning ({{ category_counts.get('tuning', 0) }})
+                </option>
+                <option value="other" {% if current_type == 'other' %}selected{% endif %}>
+                    Other ({{ category_counts.get('other', 0) }})
+                </option>
+            </select>
+        </div>
+
+        <!-- Search -->
+        <div class="flex-1 min-w-[200px]">
+            <label class="block text-sm text-gray-400 mb-1">Search</label>
+            <input type="text" name="search" value="{{ current_search }}"
+                   placeholder="Search by filename..."
+                   class="w-full bg-gray-700 text-white rounded px-3 py-2 border border-gray-600">
+        </div>
+
+        <!-- Sort -->
+        <div>
+            <label class="block text-sm text-gray-400 mb-1">Sort</label>
+            <select name="sort" onchange="this.form.submit()"
+                    class="bg-gray-700 text-white rounded px-3 py-2 border border-gray-600">
+                <option value="name" {% if current_sort == 'name' %}selected{% endif %}>Name</option>
+                <option value="size" {% if current_sort == 'size' %}selected{% endif %}>Size</option>
+                <option value="date" {% if current_sort == 'date' %}selected{% endif %}>Date</option>
+            </select>
+        </div>
+
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+            Search
+        </button>
+    </form>
+</div>
+
+<!-- Results count -->
+<div class="text-gray-400 text-sm mb-4">
+    Showing {{ cc_items|length }} of {{ total_count }} items
+    {% if total_count > 100 %}
+    <span class="text-yellow-400">(limited to first 100)</span>
+    {% endif %}
+</div>
+
+<!-- CC Grid -->
+{% if cc_items %}
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+    {% for item in cc_items %}
+    <a href="/cc/{{ item.id }}?path={{ item.path | urlencode }}"
+       class="bg-gray-800 rounded-lg overflow-hidden hover:bg-gray-700 transition-colors group">
+        <!-- Thumbnail -->
+        <div class="aspect-square bg-gray-900 flex items-center justify-center">
+            {% if item.has_thumbnail %}
+            <img src="/cc/thumbnail/{{ item.id }}?path={{ item.path | urlencode }}"
+                 alt="{{ item.filename }}"
+                 class="w-full h-full object-cover"
+                 loading="lazy"
+                 onerror="this.src='/static/placeholder.png'">
+            {% else %}
+            <div class="text-gray-600 text-4xl">
+                {% if item.category == 'cas' %}👤{% elif item.category == 'buildbuy' %}🏠{% else %}📦{% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Info -->
+        <div class="p-3">
+            <div class="text-white text-sm font-medium truncate group-hover:text-blue-400"
+                 title="{{ item.filename }}">
+                {{ item.filename }}
+            </div>
+            <div class="text-gray-500 text-xs mt-1 flex items-center gap-2">
+                <span class="px-1.5 py-0.5 rounded text-xs
+                    {% if item.category == 'cas' %}bg-purple-900 text-purple-300
+                    {% elif item.category == 'buildbuy' %}bg-green-900 text-green-300
+                    {% elif item.category == 'tuning' %}bg-yellow-900 text-yellow-300
+                    {% else %}bg-gray-700 text-gray-400{% endif %}">
+                    {{ item.category_display }}
+                </span>
+                <span>{{ item.size_mb }} MB</span>
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="bg-gray-800 rounded-lg p-8 text-center">
+    <div class="text-gray-500 text-lg mb-2">No CC found</div>
+    <p class="text-gray-600">
+        {% if current_search %}
+        No items match your search "{{ current_search }}"
+        {% elif current_type %}
+        No {{ current_type }} items found
+        {% else %}
+        Configure your Mods folder in <a href="/settings" class="text-blue-400">Settings</a>
+        {% endif %}
+    </p>
+</div>
+{% endif %}
+{% endblock %}

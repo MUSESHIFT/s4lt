@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}{{ item.filename }} - S4LT{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <a href="/cc" class="text-blue-400 hover:text-blue-300 text-sm">← Back to CC Browser</a>
+</div>
+
+<div class="grid md:grid-cols-3 gap-6">
+    <!-- Thumbnail -->
+    <div class="md:col-span-1">
+        <div class="bg-gray-800 rounded-lg overflow-hidden">
+            {% if item.has_thumbnail %}
+            <img src="/cc/thumbnail/{{ item.id }}?path={{ item.path | urlencode }}"
+                 alt="{{ item.filename }}"
+                 class="w-full aspect-square object-cover">
+            {% else %}
+            <div class="w-full aspect-square bg-gray-900 flex items-center justify-center text-gray-600 text-6xl">
+                {% if item.category == 'cas' %}👤{% elif item.category == 'buildbuy' %}🏠{% else %}📦{% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Actions -->
+        <div class="mt-4 space-y-2">
+            <button onclick="toggleMod('{{ item.path }}')"
+                    class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 rounded">
+                Disable
+            </button>
+            <button onclick="deleteMod('{{ item.path }}')"
+                    class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded">
+                Delete
+            </button>
+        </div>
+    </div>
+
+    <!-- Details -->
+    <div class="md:col-span-2">
+        <div class="bg-gray-800 rounded-lg p-6">
+            <h1 class="text-2xl font-bold text-white mb-4">{{ item.filename }}</h1>
+
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                    <div class="text-gray-400 text-sm">Category</div>
+                    <div class="text-white">
+                        <span class="px-2 py-1 rounded text-sm
+                            {% if item.category == 'cas' %}bg-purple-900 text-purple-300
+                            {% elif item.category == 'buildbuy' %}bg-green-900 text-green-300
+                            {% elif item.category == 'tuning' %}bg-yellow-900 text-yellow-300
+                            {% else %}bg-gray-700 text-gray-400{% endif %}">
+                            {{ item.category_display }}
+                        </span>
+                        <span class="text-gray-400 ml-2">/ {{ item.subcategory_display }}</span>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-gray-400 text-sm">Size</div>
+                    <div class="text-white">{{ item.size_mb }} MB</div>
+                </div>
+                <div>
+                    <div class="text-gray-400 text-sm">Resources</div>
+                    <div class="text-white">{{ item.total_resources }}</div>
+                </div>
+                <div>
+                    <div class="text-gray-400 text-sm">Has Thumbnail</div>
+                    <div class="text-white">{% if item.has_thumbnail %}Yes{% else %}No{% endif %}</div>
+                </div>
+            </div>
+
+            <!-- Path -->
+            <div class="mb-6">
+                <div class="text-gray-400 text-sm mb-1">Location</div>
+                <div class="bg-gray-900 rounded p-3 font-mono text-sm text-gray-300 break-all">
+                    {{ item.rel_path }}
+                </div>
+            </div>
+
+            <!-- Resource Breakdown -->
+            {% if item.resource_counts %}
+            <div>
+                <div class="text-gray-400 text-sm mb-2">Resource Breakdown</div>
+                <div class="bg-gray-900 rounded p-4">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-gray-400 border-b border-gray-700">
+                                <th class="text-left py-2">Type</th>
+                                <th class="text-right py-2">Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for type_name, count in item.resource_counts.items() %}
+                            <tr class="border-b border-gray-800">
+                                <td class="py-2 text-white">{{ type_name }}</td>
+                                <td class="py-2 text-right text-gray-300">{{ count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleMod(path) {
+    if (confirm('Disable this mod?')) {
+        fetch('/api/mods/toggle', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({path: path})
+        }).then(r => r.json()).then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Failed: ' + data.error);
+            }
+        });
+    }
+}
+
+function deleteMod(path) {
+    if (confirm('Delete this mod? This cannot be undone!')) {
+        fetch('/api/mods/delete', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({path: path})
+        }).then(r => r.json()).then(data => {
+            if (data.success) {
+                location.href = '/cc';
+            } else {
+                alert('Failed: ' + data.error);
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

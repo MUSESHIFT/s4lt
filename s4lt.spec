@@ -64,7 +64,13 @@ hiddenimports = [
     's4lt.web.routers.storage',
     's4lt.web.routers.setup',
     's4lt.web.routers.debug',
+    's4lt.web.routers.cc',
+    's4lt.web.routers.conflicts',
     's4lt.logging',
+    's4lt.core.categorizer',
+    's4lt.core.thumbnails',
+    's4lt.conflicts',
+    's4lt.conflicts.detector',
 ]
 
 a = Analysis(

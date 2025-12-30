@@ -29,13 +29,17 @@ s4lt/cli/commands/tray.py
 s4lt/config/__init__.py
 s4lt/config/paths.py
 s4lt/config/settings.py
+s4lt/conflicts/__init__.py
+s4lt/conflicts/detector.py
 s4lt/core/__init__.py
+s4lt/core/categorizer.py
 s4lt/core/compression.py
 s4lt/core/exceptions.py
 s4lt/core/header.py
 s4lt/core/index.py
 s4lt/core/package.py
 s4lt/core/resource.py
+s4lt/core/thumbnails.py
 s4lt/core/types.py
 s4lt/core/writer.py
 s4lt/db/__init__.py
@@ -87,6 +91,8 @@ s4lt/web/deps.py
 s4lt/web/paths.py
 s4lt/web/routers/__init__.py
 s4lt/web/routers/api.py
+s4lt/web/routers/cc.py
+s4lt/web/routers/conflicts.py
 s4lt/web/routers/dashboard.py
 s4lt/web/routers/debug.py
 s4lt/web/routers/mods.py

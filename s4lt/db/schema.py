@@ -16,7 +16,12 @@ CREATE TABLE IF NOT EXISTS mods (
     scan_time REAL,
     broken INTEGER DEFAULT 0,
     error_message TEXT,
-    category TEXT
+    category TEXT,
+    subcategory TEXT,
+    thumbnail_path TEXT,
+    enabled INTEGER DEFAULT 1,
+    created_at REAL,
+    modified_at REAL
 );
 
 -- Resources inside packages
@@ -37,6 +42,8 @@ CREATE INDEX IF NOT EXISTS idx_resources_tgi ON resources(type_id, group_id, ins
 CREATE INDEX IF NOT EXISTS idx_resources_mod ON resources(mod_id);
 CREATE INDEX IF NOT EXISTS idx_mods_hash ON mods(hash);
 CREATE INDEX IF NOT EXISTS idx_mods_path ON mods(path);
+CREATE INDEX IF NOT EXISTS idx_mods_category ON mods(category);
+CREATE INDEX IF NOT EXISTS idx_mods_enabled ON mods(enabled);
 
 -- Config storage
 CREATE TABLE IF NOT EXISTS config (
@@ -61,6 +68,40 @@ CREATE TABLE IF NOT EXISTS profile_mods (
 );
 
 CREATE INDEX IF NOT EXISTS idx_profile_mods_profile ON profile_mods(profile_id);
+
+-- Detected conflicts
+CREATE TABLE IF NOT EXISTS conflicts (
+    id INTEGER PRIMARY KEY,
+    type TEXT NOT NULL,
+    severity TEXT NOT NULL,
+    resource_type INTEGER,
+    resource_type_name TEXT,
+    instance_id INTEGER,
+    group_id INTEGER,
+    packages TEXT NOT NULL,
+    description TEXT,
+    resolved INTEGER DEFAULT 0,
+    resolution TEXT,
+    created_at REAL
+);
+
+CREATE INDEX IF NOT EXISTS idx_conflicts_resolved ON conflicts(resolved);
+CREATE INDEX IF NOT EXISTS idx_conflicts_severity ON conflicts(severity);
+
+-- Tray items (saved Sims, lots, rooms)
+CREATE TABLE IF NOT EXISTS tray_items (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    thumbnail_path TEXT,
+    cc_references TEXT,
+    missing_cc_count INTEGER DEFAULT 0,
+    last_checked REAL,
+    created_at REAL
+);
+
+CREATE INDEX IF NOT EXISTS idx_tray_items_type ON tray_items(type);
+CREATE INDEX IF NOT EXISTS idx_tray_items_missing ON tray_items(missing_cc_count);
 """
 
 

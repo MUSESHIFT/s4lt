@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from s4lt.web.routers import dashboard, mods, tray, profiles, api, package, storage, setup, debug
+from s4lt.web.routers import dashboard, mods, tray, profiles, api, package, storage, setup, debug, cc, conflicts
 from s4lt.web.paths import get_static_dir, get_templates_dir
 from s4lt.deck.detection import is_steam_deck
 from s4lt import __version__
@@ -110,8 +110,10 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(setup.router)  # Setup first for first-run experience
     app.include_router(dashboard.router)
+    app.include_router(cc.router)  # CC Browser
     app.include_router(mods.router)
     app.include_router(tray.router)
+    app.include_router(conflicts.router)  # Conflict detection
     app.include_router(profiles.router)
     app.include_router(api.router)
     app.include_router(package.router)
