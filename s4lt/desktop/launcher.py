@@ -1,11 +1,13 @@
 """Desktop application launcher - entry point for PyInstaller."""
 
+import argparse
 import logging
+import signal
 import sys
 from pathlib import Path
 from typing import Optional
 
-from s4lt.desktop.app import DesktopApp
+from s4lt.desktop.app import DesktopApp, Server
 from s4lt.desktop.tray import TrayIcon
 
 
@@ -80,11 +82,57 @@ def on_window_close() -> None:
         _app.hide()
 
 
+def run_headless(host: str = "127.0.0.1", port: int = 8040) -> None:
+    """Run only the web server without GUI components."""
+    server = Server(host=host, port=port)
+
+    # Handle Ctrl+C gracefully
+    def signal_handler(sig, frame):
+        print("\nShutting down...")
+        server.stop()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    logging.info("Starting S4LT in headless mode")
+    server.start()
+    print(f"Server running at http://{host}:{port}")
+    print("Press Ctrl+C to stop")
+
+    # Block forever (signal handler will exit)
+    signal.pause()
+
+
 def main() -> None:
     """Main entry point for the desktop application."""
     global _app, _tray
 
+    parser = argparse.ArgumentParser(description="S4LT - Sims 4 Linux Toolkit")
+    parser.add_argument(
+        "--headless",
+        action="store_true",
+        help="Run only the web server without GUI (for headless servers)",
+    )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Host to bind to (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8040,
+        help="Port to bind to (default: 8040)",
+    )
+    args = parser.parse_args()
+
     setup_logging()
+
+    if args.headless:
+        run_headless(host=args.host, port=args.port)
+        return
+
     logging.info("Starting S4LT Desktop Application")
 
     try:
