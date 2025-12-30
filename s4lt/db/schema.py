@@ -113,10 +113,42 @@ def get_connection(db_path: Path) -> sqlite3.Connection:
     return conn
 
 
+def _get_table_columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    """Get column names for a table."""
+    cursor = conn.execute(f"PRAGMA table_info({table})")
+    return {row[1] for row in cursor.fetchall()}
+
+
+def _apply_migrations(conn: sqlite3.Connection) -> None:
+    """Apply schema migrations for existing databases."""
+    # Migration: Add new columns to mods table
+    mods_columns = _get_table_columns(conn, "mods")
+    migrations = [
+        ("mods", "category", "TEXT"),
+        ("mods", "subcategory", "TEXT"),
+        ("mods", "thumbnail_path", "TEXT"),
+        ("mods", "enabled", "INTEGER DEFAULT 1"),
+    ]
+    for table, column, col_type in migrations:
+        if column not in mods_columns:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
+
+
 def init_db(db_path: Path) -> None:
     """Initialize database with schema."""
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = get_connection(db_path)
+
+    # Check if mods table exists (existing database)
+    cursor = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='mods'"
+    )
+    table_exists = cursor.fetchone() is not None
+
+    if table_exists:
+        # Apply migrations first for existing databases
+        _apply_migrations(conn)
+
     conn.executescript(SCHEMA)
     conn.commit()
     conn.close()

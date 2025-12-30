@@ -61,7 +61,7 @@ def test_organize_by_type_dry_run():
         # File should NOT move in dry run
         assert mod_file.exists()
         assert len(result.moves) == 1
-        assert result.moves[0].target == mods_path / "CAS" / "cas.package"
+        assert result.moves[0].target == mods_path / "CAS CC" / "cas.package"
         conn.close()
 
 
@@ -84,7 +84,7 @@ def test_organize_by_type_moves_files():
 
         # File should move
         assert not mod_file.exists()
-        assert (mods_path / "CAS" / "cas.package").exists()
+        assert (mods_path / "CAS CC" / "cas.package").exists()
         assert len(result.moves) == 1
         conn.close()
 

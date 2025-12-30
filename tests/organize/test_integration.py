@@ -51,8 +51,8 @@ def test_full_organize_workflow():
         # Step 2: Organize by type
         result = organize_by_type(conn, mods_path, dry_run=False)
         assert len(result.moves) == 2
-        assert (mods_path / "CAS" / "SimsyCreator_Hair.package").exists()
-        assert (mods_path / "Script" / "MCCC_Main.package").exists()
+        assert (mods_path / "CAS CC" / "SimsyCreator_Hair.package").exists()
+        assert (mods_path / "Script Mod" / "MCCC_Main.package").exists()
 
         # Step 3: Save profile
         profile = create_profile(conn, "gameplay")
@@ -63,24 +63,24 @@ def test_full_organize_workflow():
         toggle_vanilla(conn, mods_path)
         assert is_vanilla_mode(conn)
         # All mods should be disabled
-        assert (mods_path / "CAS" / "SimsyCreator_Hair.package.disabled").exists()
-        assert (mods_path / "Script" / "MCCC_Main.package.disabled").exists()
+        assert (mods_path / "CAS CC" / "SimsyCreator_Hair.package.disabled").exists()
+        assert (mods_path / "Script Mod" / "MCCC_Main.package.disabled").exists()
 
         # Step 5: Exit vanilla mode
         toggle_vanilla(conn, mods_path)
         assert not is_vanilla_mode(conn)
         # Mods should be restored
-        assert (mods_path / "CAS" / "SimsyCreator_Hair.package").exists()
-        assert (mods_path / "Script" / "MCCC_Main.package").exists()
+        assert (mods_path / "CAS CC" / "SimsyCreator_Hair.package").exists()
+        assert (mods_path / "Script Mod" / "MCCC_Main.package").exists()
 
         # Step 6: Manually disable one mod
-        disable_mod(mods_path / "CAS" / "SimsyCreator_Hair.package")
-        assert (mods_path / "CAS" / "SimsyCreator_Hair.package.disabled").exists()
+        disable_mod(mods_path / "CAS CC" / "SimsyCreator_Hair.package")
+        assert (mods_path / "CAS CC" / "SimsyCreator_Hair.package.disabled").exists()
 
         # Step 7: Restore from profile
         switch_profile(conn, "gameplay", mods_path)
         # Should restore the disabled mod
-        assert (mods_path / "CAS" / "SimsyCreator_Hair.package").exists()
+        assert (mods_path / "CAS CC" / "SimsyCreator_Hair.package").exists()
 
         conn.close()
 
