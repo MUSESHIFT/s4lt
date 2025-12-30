@@ -125,9 +125,25 @@ async def debug_page(request: Request):
 
             <h2>Recent Logs</h2>
             <div class="section">
-                <div class="logs">{''.join(recent_logs) if recent_logs else 'No logs available'}</div>
+                <button onclick="copyLogs()" style="background: #4dabf7; color: #000; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-bottom: 12px; font-size: 16px;">📋 Copy Logs to Clipboard</button>
+                <span id="copyStatus" style="margin-left: 10px; color: #69db7c;"></span>
+                <textarea id="logArea" readonly style="width: 100%; height: 400px; background: #1a1a2e; color: #eee; border: 1px solid #3d3d5c; border-radius: 4px; padding: 12px; font-family: monospace; font-size: 12px; resize: vertical;">{''.join(recent_logs) if recent_logs else 'No logs available'}</textarea>
             </div>
         </div>
+        <script>
+        function copyLogs() {{
+            var textarea = document.getElementById('logArea');
+            textarea.select();
+            textarea.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(textarea.value).then(function() {{
+                document.getElementById('copyStatus').textContent = '✓ Copied!';
+                setTimeout(function() {{ document.getElementById('copyStatus').textContent = ''; }}, 3000);
+            }}).catch(function() {{
+                document.execCommand('copy');
+                document.getElementById('copyStatus').textContent = '✓ Copied!';
+            }});
+        }}
+        </script>
     </body>
     </html>
     """
