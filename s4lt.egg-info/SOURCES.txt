@@ -44,6 +44,10 @@ s4lt/deck/__init__.py
 s4lt/deck/detection.py
 s4lt/deck/steam.py
 s4lt/deck/storage.py
+s4lt/desktop/__init__.py
+s4lt/desktop/app.py
+s4lt/desktop/launcher.py
+s4lt/desktop/tray.py
 s4lt/ea/__init__.py
 s4lt/ea/database.py
 s4lt/ea/exceptions.py
@@ -85,5 +89,6 @@ s4lt/web/routers/dashboard.py
 s4lt/web/routers/mods.py
 s4lt/web/routers/package.py
 s4lt/web/routers/profiles.py
+s4lt/web/routers/setup.py
 s4lt/web/routers/storage.py
 s4lt/web/routers/tray.py
