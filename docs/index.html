@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S4LT - Sims 4 Mod Manager for Steam Deck & Linux</title>
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/MUSESHIFT/s4lt/main/assets/s4lt-icon.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 20px;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+
+        .download-btn {
+            display: inline-block;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            color: #1a1a2e;
+            font-size: 1.3rem;
+            font-weight: bold;
+            padding: 18px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 5px 30px rgba(0, 217, 255, 0.4);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 40px rgba(0, 217, 255, 0.6);
+        }
+
+        .version {
+            margin-top: 15px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .features {
+            margin-top: 50px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            text-align: left;
+        }
+
+        .feature {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .feature h3 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            color: #00d9ff;
+        }
+
+        .feature p {
+            font-size: 0.85rem;
+            color: #888;
+            line-height: 1.4;
+        }
+
+        .instructions {
+            margin-top: 40px;
+            background: rgba(255,255,255,0.05);
+            padding: 25px;
+            border-radius: 16px;
+            text-align: left;
+        }
+
+        .instructions h2 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #00ff88;
+        }
+
+        .instructions ol {
+            padding-left: 20px;
+            color: #ccc;
+            line-height: 1.8;
+        }
+
+        .footer {
+            margin-top: 50px;
+            color: #555;
+            font-size: 0.85rem;
+        }
+
+        .footer a {
+            color: #00d9ff;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+            .download-btn {
+                padding: 15px 30px;
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="https://raw.githubusercontent.com/MUSESHIFT/s4lt/main/assets/s4lt-icon.png" alt="S4LT" class="logo">
+
+        <h1>S4LT</h1>
+        <p class="tagline">Sims 4 Mod Manager for Steam Deck & Linux</p>
+
+        <a href="https://github.com/MUSESHIFT/s4lt/releases/download/v0.8.0/S4LT-0.8.0-x86_64.AppImage" class="download-btn">
+            Download for Linux
+        </a>
+        <p class="version">v0.8.0 &bull; 32 MB &bull; AppImage</p>
+
+        <div class="features">
+            <div class="feature">
+                <h3>Auto-Detect</h3>
+                <p>Finds your mods folder automatically</p>
+            </div>
+            <div class="feature">
+                <h3>One-Click</h3>
+                <p>Toggle mods on/off instantly</p>
+            </div>
+            <div class="feature">
+                <h3>Categorize</h3>
+                <p>Script, CAS CC, Build/Buy sorted</p>
+            </div>
+            <div class="feature">
+                <h3>No Terminal</h3>
+                <p>Everything works with clicks</p>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h2>Installation</h2>
+            <ol>
+                <li>Download the AppImage above</li>
+                <li>Right-click &rarr; Properties &rarr; Permissions &rarr; Allow executing</li>
+                <li>Double-click to run!</li>
+            </ol>
+        </div>
+
+        <div class="footer">
+            <p>Made by <strong>museshift sims</strong></p>
+            <p style="margin-top: 8px;">
+                <a href="https://github.com/MUSESHIFT/s4lt">GitHub</a> &bull;
+                <a href="https://github.com/MUSESHIFT/s4lt/issues">Report Bug</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
