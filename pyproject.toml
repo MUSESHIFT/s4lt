@@ -35,6 +35,11 @@ dependencies = [
     "pywebview>=5.0",
     "pystray>=0.19",
     "pillow>=10.0.0",
+
+    # Qt bindings for pywebview (PyQt5 for Steam Deck compatibility)
+    "qtpy",
+    "PyQt5",
+    "PyQtWebEngine",
 ]
 
 [project.optional-dependencies]
