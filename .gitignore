@@ -31,6 +31,9 @@ htmlcov/
 Thumbs.db
 
 # AppImage build artifacts
+AppDir/
 appimage/AppDir/
+appimagetool-*.AppImage
 appimage/appimagetool-*.AppImage
+squashfs-root/
 appimage/squashfs-root/

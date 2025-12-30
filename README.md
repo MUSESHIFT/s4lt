@@ -1,100 +1,134 @@
 # S4LT: Sims 4 Linux Toolkit
 
-Native Linux tools for Sims 4 mod management. No Wine. No Proton. No bullshit.
+Native Linux mod manager for The Sims 4. Built for Steam Deck and desktop Linux.
 
-## Status
+**No terminal required. Just click and play.**
 
-**Phase 1: Core Engine** - Complete
-**Phase 2: Mod Scanner** - Complete
+## Features
 
-## Features (Planned)
+- **Auto-detect Mods folder** - Works with Steam, NonSteamLaunchers, Heroic, Lutris
+- **Smart categorization** - Automatically sorts mods into Script Mods, CAS CC, Build/Buy CC, Tuning
+- **Enable/Disable mods** - Toggle switches, no renaming files manually
+- **Vanilla Mode** - One click to disable all mods for testing
+- **Mod Profiles** - Save and switch between different mod configurations
+- **Conflict Detection** - Find mods that override the same resources
+- **Tray Manager** - Browse your saved Sims and Lots
+- **Steam Deck optimized** - Touch-friendly UI, SD card support
 
-- **Mod Manager** - Scan, organize, detect conflicts, manage loadouts
-- **Tray Manager** - Browse saved Sims/Lots, track CC usage
-- **Package Editor** - View and edit .package files
-- **Tuning Editor** - Create gameplay tweaks without coding
-- **Save Manager** - Backup, restore, and edit saves
-- **Steam Deck Support** - Controller UI, SD card management, sync
+## Install (Steam Deck)
 
-## Installation
+1. Download `S4LT-0.8.0-x86_64.AppImage` from [Releases](../../releases)
+2. Move to your home folder
+3. Right-click → Properties → Permissions → Allow executing as program
+4. Double-click to run
 
+**That's it!** S4LT will auto-detect your mods folder.
+
+## Install (Desktop Linux)
+
+### AppImage (Recommended)
 ```bash
-# Coming soon
-pip install s4lt
+wget https://github.com/YOUR_USERNAME/s4lt/releases/download/v0.8.0/S4LT-0.8.0-x86_64.AppImage
+chmod +x S4LT-0.8.0-x86_64.AppImage
+./S4LT-0.8.0-x86_64.AppImage
 ```
 
-## Phase 1: DBPF Core Engine
-
-The core DBPF parser is now functional:
-
-```python
-from s4lt import Package
-
-# Open and inspect a package
-with Package.open("path/to/mod.package") as pkg:
-    print(f"Version: {pkg.version}")
-    print(f"Resources: {len(pkg)}")
-
-    for resource in pkg.resources:
-        print(f"  {resource.type_name}: {resource.instance_id:016X}")
-
-    # Extract a resource
-    data = pkg.resources[0].extract()
+### From Source
+```bash
+git clone https://github.com/YOUR_USERNAME/s4lt.git
+cd s4lt
+pip install -e .
+s4lt-desktop  # Launch GUI
+s4lt --help   # CLI
 ```
 
-### CLI Testing
+## Screenshots
+
+*Coming soon*
+
+## Mod Categories
+
+S4LT automatically categorizes your mods:
+
+| Category | Description | Examples |
+|----------|-------------|----------|
+| **Script Mod** | Contains Python code | MCCC, Wicked Whims, Basemental |
+| **CAS CC** | Create-a-Sim items | Hair, clothes, makeup, skins |
+| **Build/Buy CC** | Objects and building | Furniture, walls, floors |
+| **Tuning Mod** | Gameplay tweaks | Career mods, trait mods |
+| **Other** | Mixed or unknown | Merged packs |
+
+## Common Mods Folder Paths
+
+S4LT checks these locations automatically:
+
+| Setup | Path |
+|-------|------|
+| NonSteamLaunchers | `~/.local/share/Steam/steamapps/compatdata/NonSteamLaunchers/pfx/drive_c/users/steamuser/Documents/Electronic Arts/The Sims 4/` |
+| Steam Proton | `~/.local/share/Steam/steamapps/compatdata/1222670/pfx/drive_c/users/steamuser/Documents/Electronic Arts/The Sims 4/` |
+| Flatpak Steam | `~/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/compatdata/1222670/pfx/...` |
+| Heroic | `~/.config/heroic/prefixes/The Sims 4/pfx/drive_c/...` |
+| Lutris | `~/Games/the-sims-4/drive_c/users/$USER/Documents/Electronic Arts/The Sims 4/` |
+
+## CLI Usage
 
 ```bash
-python -m s4lt.cli.package_info path/to/mod.package
-```
-
-## Phase 2: Mod Scanner
-
-Scan, index, and analyze your Mods folder:
-
-```bash
-# First run - detects Mods folder automatically
+# Scan mods folder
 s4lt scan
 
 # Show conflicts
 s4lt conflicts
-s4lt conflicts --high  # High severity only
+s4lt conflicts --high
 
 # Find duplicates
 s4lt duplicates
 
 # Package info
-s4lt info CoolHair.package
+s4lt info path/to/mod.package
+
+# Tray items
+s4lt tray list
+s4lt tray cc "My Sim"
+
+# Profiles
+s4lt profile list
+s4lt profile save "My CC Setup"
+s4lt profile load "Vanilla Plus"
+
+# Toggle mods
+s4lt enable "*.package"
+s4lt disable "BrokenMod.package"
+
+# Vanilla mode
+s4lt vanilla  # Toggle all mods off/on
+
+# Start web UI
+s4lt serve
 ```
 
-### Features
-
-- **Full indexing** with human-readable names from tuning XML
-- **Conflict detection** grouped by severity (high/medium/low)
-- **Duplicate detection** - exact matches and content-identical packages
-- **Incremental updates** - only re-indexes changed files
-- **SQLite caching** for fast subsequent operations
-
-## Usage (Future)
+## Building from Source
 
 ```bash
-# Coming in Phase 3+
-s4lt package view X    # View package contents
-s4lt tray list         # List saved Sims/Lots
+# Install dependencies
+pip install -e ".[dev]"
+
+# Run tests
+pytest tests/
+
+# Build AppImage
+./build-appimage.sh
 ```
 
-## Development
+## Requirements
 
-```bash
-cd /root/s4lt
-python -m pytest tests/
-```
-
-## Documentation
-
-- [Full Specification](docs/S4LT-FULL-SPEC.md)
-- [Phase 1 Design](docs/plans/2025-12-26-dbpf-core-engine-design.md)
+- Python 3.11+
+- Linux (tested on Ubuntu 22.04, Steam Deck)
+- GTK 3 or Qt 5/6 for desktop app
 
 ## License
 
 MIT
+
+## Credits
+
+Built for the Sims modding community. Inspired by the need for native Linux tools.

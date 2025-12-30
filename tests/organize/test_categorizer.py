@@ -8,13 +8,11 @@ from s4lt.organize.categorizer import ModCategory, TYPE_TO_CATEGORY, CATEGORY_PR
 
 def test_mod_category_enum_values():
     """ModCategory should have all expected values."""
-    assert ModCategory.CAS.value == "CAS"
-    assert ModCategory.BUILD_BUY.value == "BuildBuy"
-    assert ModCategory.SCRIPT.value == "Script"
-    assert ModCategory.TUNING.value == "Tuning"
-    assert ModCategory.OVERRIDE.value == "Override"
-    assert ModCategory.GAMEPLAY.value == "Gameplay"
-    assert ModCategory.UNKNOWN.value == "Unknown"
+    assert ModCategory.CAS.value == "CAS CC"
+    assert ModCategory.BUILD_BUY.value == "Build/Buy CC"
+    assert ModCategory.SCRIPT.value == "Script Mod"
+    assert ModCategory.TUNING.value == "Tuning Mod"
+    assert ModCategory.OTHER.value == "Other"
 
 
 def test_type_to_category_cas():
@@ -84,7 +82,7 @@ def test_categorize_mod_script_wins_tie():
 
 
 def test_categorize_mod_unknown_resources():
-    """Mod with unknown resource types should be UNKNOWN."""
+    """Mod with unknown resource types should be OTHER."""
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = Path(tmpdir) / "test.db"
         init_db(db_path)
@@ -96,5 +94,5 @@ def test_categorize_mod_unknown_resources():
 
         category = categorize_mod(conn, mod_id)
 
-        assert category == ModCategory.UNKNOWN
+        assert category == ModCategory.OTHER
         conn.close()

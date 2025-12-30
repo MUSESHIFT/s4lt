@@ -1,5 +1,7 @@
 """Desktop application with embedded webview."""
 
+import logging
+import sys
 import threading
 import socket
 import time
@@ -10,6 +12,35 @@ import webview
 import uvicorn
 
 from s4lt.web import create_app
+
+
+logger = logging.getLogger(__name__)
+
+
+def get_asset_path(filename: str) -> Optional[Path]:
+    """Get path to an asset file, works in both dev and frozen (PyInstaller) mode."""
+    # For PyInstaller frozen apps
+    if getattr(sys, 'frozen', False):
+        bundle_dir = Path(sys._MEIPASS)
+        asset_path = bundle_dir / "assets" / filename
+        if asset_path.exists():
+            return asset_path
+        asset_path = bundle_dir / filename
+        if asset_path.exists():
+            return asset_path
+
+    # Development mode - try relative to package
+    locations = [
+        Path(__file__).parent.parent.parent / "assets" / filename,
+        Path(__file__).parent.parent / "assets" / filename,
+        Path("/usr/share/icons") / filename,
+        Path.home() / ".local/share/icons" / filename,
+    ]
+
+    for path in locations:
+        if path.exists():
+            return path
+    return None
 
 
 class Server:
@@ -73,6 +104,7 @@ class DesktopApp:
         self.server = Server()
         self.window: Optional[webview.Window] = None
         self._on_close_callback: Optional[callable] = None
+        self._window_shown = False
 
     def set_on_close_callback(self, callback: callable) -> None:
         """Set callback for when window is closed (minimize to tray)."""
@@ -81,10 +113,9 @@ class DesktopApp:
     def start(self) -> None:
         """Start the desktop application."""
         # Start the backend server
+        logger.info("Starting backend server...")
         self.server.start()
-
-        # Get icon path
-        icon_path = self._get_icon_path()
+        logger.info(f"Server started at {self.server.url}")
 
         # Create the webview window
         self.window = webview.create_window(
@@ -105,36 +136,62 @@ class DesktopApp:
 
         self.window.events.closing += on_closing
 
+        # Ensure window is shown and focused when it loads
+        def on_loaded():
+            logger.info("Window loaded, ensuring visibility")
+            self._ensure_window_visible()
+
+        self.window.events.loaded += on_loaded
+
+    def _ensure_window_visible(self) -> None:
+        """Ensure the window is visible and focused."""
+        if self.window and not self._window_shown:
+            try:
+                self.window.show()
+                self.window.restore()
+                self.window.on_top = True  # Temporarily bring to front
+                time.sleep(0.1)
+                self.window.on_top = False  # Allow normal stacking
+                self._window_shown = True
+                logger.info("Window shown successfully")
+            except Exception as e:
+                logger.warning(f"Failed to ensure window visibility: {e}")
+
     def run(self) -> None:
         """Run the webview event loop (blocking)."""
+        # Start webview - window should open immediately
+        logger.info("Starting webview event loop")
         webview.start()
 
     def show(self) -> None:
         """Show the window."""
         if self.window:
-            self.window.show()
-            self.window.restore()
+            try:
+                self.window.show()
+                self.window.restore()
+                # Bring to front
+                self.window.on_top = True
+                time.sleep(0.05)
+                self.window.on_top = False
+                logger.info("Window shown from tray")
+            except Exception as e:
+                logger.warning(f"Error showing window: {e}")
 
     def hide(self) -> None:
         """Hide the window."""
         if self.window:
-            self.window.hide()
+            try:
+                self.window.hide()
+                logger.info("Window hidden to tray")
+            except Exception as e:
+                logger.warning(f"Error hiding window: {e}")
 
     def quit(self) -> None:
         """Quit the application."""
+        logger.info("Quitting desktop app")
         self.server.stop()
         if self.window:
-            self.window.destroy()
-
-    def _get_icon_path(self) -> Optional[Path]:
-        """Get the path to the application icon."""
-        # Try multiple locations
-        locations = [
-            Path(__file__).parent.parent.parent / "assets" / "s4lt-icon.png",
-            Path("/usr/share/icons/s4lt.png"),
-            Path.home() / ".local/share/icons/s4lt.png",
-        ]
-        for path in locations:
-            if path.exists():
-                return path
-        return None
+            try:
+                self.window.destroy()
+            except Exception as e:
+                logger.warning(f"Error destroying window: {e}")

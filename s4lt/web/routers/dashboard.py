@@ -7,6 +7,7 @@ from pathlib import Path
 
 from s4lt.web.deps import get_db, get_mods_path
 from s4lt.deck.storage import get_storage_summary, get_sd_card_path, check_symlink_health
+from s4lt.organize.categorizer import ModCategory
 from s4lt import __version__
 
 router = APIRouter()
@@ -31,6 +32,22 @@ async def dashboard(
 
     cursor = conn.execute("SELECT COUNT(*) FROM profiles")
     total_profiles = cursor.fetchone()[0]
+
+    # Get category counts
+    category_counts = {
+        ModCategory.SCRIPT.value: 0,
+        ModCategory.CAS.value: 0,
+        ModCategory.BUILD_BUY.value: 0,
+        ModCategory.TUNING.value: 0,
+        ModCategory.OTHER.value: 0,
+    }
+
+    cursor = conn.execute(
+        "SELECT category, COUNT(*) as count FROM mods WHERE broken = 0 GROUP BY category"
+    )
+    for row in cursor.fetchall():
+        if row[0] and row[0] in category_counts:
+            category_counts[row[0]] = row[1]
 
     # Check vanilla mode
     cursor = conn.execute("SELECT COUNT(*) FROM profiles WHERE name = '_pre_vanilla'")
@@ -57,6 +74,7 @@ async def dashboard(
                 "total_resources": total_resources,
                 "total_profiles": total_profiles,
             },
+            "categories": category_counts,
             "is_vanilla": is_vanilla,
             "mods_path": str(mods_path) if mods_path else "Not configured",
             "storage": storage,

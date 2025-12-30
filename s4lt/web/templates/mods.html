@@ -16,14 +16,15 @@
             name="search"
             value="{{ search }}"
             placeholder="Search mods..."
-            class="px-4 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500">
+            class="flex-1 min-w-48 px-4 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500">
         <select name="category" class="px-4 py-2 bg-gray-700 border border-gray-600 rounded">
             <option value="">All Categories</option>
             {% for cat, count in categories.items() %}
             <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }} ({{ count }})</option>
             {% endfor %}
         </select>
-        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded">Filter</button>
+        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded font-medium">Filter</button>
+        <a href="/mods" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded">Clear</a>
     </form>
 </div>
 
@@ -32,6 +33,7 @@
     <table class="w-full">
         <thead class="bg-gray-700">
             <tr>
+                <th class="px-4 py-3 text-left w-12">Status</th>
                 <th class="px-4 py-3 text-left">Filename</th>
                 <th class="px-4 py-3 text-left">Category</th>
                 <th class="px-4 py-3 text-left">Size</th>
@@ -41,36 +43,97 @@
         </thead>
         <tbody class="divide-y divide-gray-700">
             {% for mod in mods %}
-            <tr class="hover:bg-gray-750">
+            <tr id="mod-{{ mod.id }}" class="hover:bg-gray-750 {% if mod.filename.endswith('.disabled') %}opacity-60{% endif %}">
                 <td class="px-4 py-3">
-                    <div class="font-medium">{{ mod.filename }}</div>
-                    <div class="text-sm text-gray-400">{{ mod.path }}</div>
+                    <!-- Toggle Switch -->
+                    <button
+                        onclick="toggleMod({{ mod.id }}, this)"
+                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800
+                        {% if mod.filename.endswith('.disabled') %}bg-gray-600{% else %}bg-green-500{% endif %}"
+                        role="switch"
+                        aria-checked="{% if mod.filename.endswith('.disabled') %}false{% else %}true{% endif %}">
+                        <span
+                            class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
+                            {% if mod.filename.endswith('.disabled') %}translate-x-0{% else %}translate-x-5{% endif %}">
+                        </span>
+                    </button>
+                </td>
+                <td class="px-4 py-3">
+                    <div class="font-medium {% if mod.filename.endswith('.disabled') %}line-through text-gray-500{% endif %}">
+                        {{ mod.filename.replace('.disabled', '') }}
+                    </div>
+                    <div class="text-sm text-gray-400 truncate max-w-xs" title="{{ mod.path }}">{{ mod.path }}</div>
                 </td>
                 <td class="px-4 py-3">
                     <span class="px-2 py-1 rounded text-sm
-                        {% if mod.category == 'CAS' %}bg-pink-600
-                        {% elif mod.category == 'BuildBuy' %}bg-blue-600
-                        {% elif mod.category == 'Script' %}bg-purple-600
-                        {% elif mod.category == 'Tuning' %}bg-green-600
+                        {% if mod.category == 'CAS CC' %}bg-pink-600
+                        {% elif mod.category == 'Build/Buy CC' %}bg-blue-600
+                        {% elif mod.category == 'Script Mod' %}bg-purple-600
+                        {% elif mod.category == 'Tuning Mod' %}bg-yellow-600
                         {% else %}bg-gray-600{% endif %}">
-                        {{ mod.category or 'Unknown' }}
+                        {{ mod.category or 'Other' }}
                     </span>
                 </td>
                 <td class="px-4 py-3 text-gray-400">{{ "%.1f"|format(mod.size / 1024) }} KB</td>
                 <td class="px-4 py-3 text-gray-400">{{ mod.resource_count or 0 }}</td>
                 <td class="px-4 py-3 text-right">
-                    <button
-                        hx-post="/mods/{{ mod.id }}/toggle"
-                        hx-swap="none"
-                        class="px-3 py-1 bg-gray-600 hover:bg-gray-500 rounded text-sm">
-                        Toggle
-                    </button>
+                    <a href="/package/{{ mod.id }}" class="px-3 py-1 bg-gray-600 hover:bg-gray-500 rounded text-sm inline-block">
+                        View
+                    </a>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<script>
+function toggleMod(modId, button) {
+    const row = document.getElementById('mod-' + modId);
+    const span = button.querySelector('span');
+
+    // Optimistically update UI
+    const isCurrentlyEnabled = button.classList.contains('bg-green-500');
+
+    if (isCurrentlyEnabled) {
+        button.classList.remove('bg-green-500');
+        button.classList.add('bg-gray-600');
+        span.classList.remove('translate-x-5');
+        span.classList.add('translate-x-0');
+        row.classList.add('opacity-60');
+    } else {
+        button.classList.remove('bg-gray-600');
+        button.classList.add('bg-green-500');
+        span.classList.remove('translate-x-0');
+        span.classList.add('translate-x-5');
+        row.classList.remove('opacity-60');
+    }
+
+    // Send request to server
+    fetch('/mods/' + modId + '/toggle', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                // Revert on error
+                console.error(data.error);
+                if (isCurrentlyEnabled) {
+                    button.classList.add('bg-green-500');
+                    button.classList.remove('bg-gray-600');
+                    span.classList.add('translate-x-5');
+                    span.classList.remove('translate-x-0');
+                    row.classList.remove('opacity-60');
+                } else {
+                    button.classList.remove('bg-green-500');
+                    button.classList.add('bg-gray-600');
+                    span.classList.remove('translate-x-5');
+                    span.classList.add('translate-x-0');
+                    row.classList.add('opacity-60');
+                }
+            }
+        })
+        .catch(err => console.error('Toggle error:', err));
+}
+</script>
 
 <!-- Pagination -->
 {% if pages > 1 %}

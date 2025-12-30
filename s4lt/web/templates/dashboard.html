@@ -59,6 +59,33 @@
     </div>
 </div>
 
+<!-- Category Breakdown -->
+<div class="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-8">
+    <h2 class="text-xl font-bold mb-4">Mod Categories</h2>
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div class="text-center p-3 bg-purple-900/30 rounded-lg border border-purple-700">
+            <div class="text-2xl font-bold text-purple-400">{{ categories.get('Script Mod', 0) }}</div>
+            <div class="text-sm text-purple-300">Script Mods</div>
+        </div>
+        <div class="text-center p-3 bg-pink-900/30 rounded-lg border border-pink-700">
+            <div class="text-2xl font-bold text-pink-400">{{ categories.get('CAS CC', 0) }}</div>
+            <div class="text-sm text-pink-300">CAS CC</div>
+        </div>
+        <div class="text-center p-3 bg-blue-900/30 rounded-lg border border-blue-700">
+            <div class="text-2xl font-bold text-blue-400">{{ categories.get('Build/Buy CC', 0) }}</div>
+            <div class="text-sm text-blue-300">Build/Buy CC</div>
+        </div>
+        <div class="text-center p-3 bg-yellow-900/30 rounded-lg border border-yellow-700">
+            <div class="text-2xl font-bold text-yellow-400">{{ categories.get('Tuning Mod', 0) }}</div>
+            <div class="text-sm text-yellow-300">Tuning Mods</div>
+        </div>
+        <div class="text-center p-3 bg-gray-700/30 rounded-lg border border-gray-600">
+            <div class="text-2xl font-bold text-gray-400">{{ categories.get('Other', 0) }}</div>
+            <div class="text-sm text-gray-300">Other</div>
+        </div>
+    </div>
+</div>
+
 <!-- Status and Storage Widgets -->
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
     <!-- Status -->
@@ -89,19 +116,95 @@
     <h2 class="text-xl font-bold mb-4">Quick Actions</h2>
     <div class="flex flex-wrap gap-4">
         <button
-            hx-post="/api/scan"
-            hx-swap="none"
-            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded font-medium">
-            <span class="htmx-indicator">Scanning...</span>
-            <span>Scan Mods</span>
+            id="scan-btn"
+            onclick="startScan()"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded font-medium flex items-center gap-2">
+            <svg id="scan-icon" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span id="scan-text">Scan Mods</span>
         </button>
         <button
             hx-post="/api/vanilla/toggle"
             hx-swap="outerHTML"
             hx-target="body"
-            class="px-4 py-2 {% if is_vanilla %}bg-green-600 hover:bg-green-700{% else %}bg-yellow-600 hover:bg-yellow-700{% endif %} rounded font-medium">
+            class="px-4 py-2 {% if is_vanilla %}bg-green-600 hover:bg-green-700{% else %}bg-yellow-600 hover:bg-yellow-700{% endif %} rounded font-medium flex items-center gap-2">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
             {% if is_vanilla %}Exit Vanilla Mode{% else %}Enter Vanilla Mode{% endif %}
         </button>
+        <a href="/mods" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded font-medium flex items-center gap-2">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            View All Mods
+        </a>
+        <a href="/profiles" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded font-medium flex items-center gap-2">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            Manage Profiles
+        </a>
+    </div>
+
+    <!-- Scan Progress -->
+    <div id="scan-progress" class="hidden mt-4">
+        <div class="flex items-center gap-3">
+            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+            <span id="scan-status" class="text-gray-300">Scanning...</span>
+        </div>
+        <div class="mt-2 w-full bg-gray-700 rounded-full h-2">
+            <div id="scan-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
     </div>
 </div>
+
+<script>
+function startScan() {
+    const btn = document.getElementById('scan-btn');
+    const icon = document.getElementById('scan-icon');
+    const text = document.getElementById('scan-text');
+    const progress = document.getElementById('scan-progress');
+    const bar = document.getElementById('scan-bar');
+    const status = document.getElementById('scan-status');
+
+    // Disable button and show spinner
+    btn.disabled = true;
+    btn.classList.add('opacity-50', 'cursor-not-allowed');
+    icon.classList.add('animate-spin');
+    text.textContent = 'Scanning...';
+    progress.classList.remove('hidden');
+
+    // Animate progress bar
+    let progressValue = 0;
+    const progressInterval = setInterval(() => {
+        if (progressValue < 90) {
+            progressValue += Math.random() * 15;
+            bar.style.width = Math.min(progressValue, 90) + '%';
+        }
+    }, 300);
+
+    fetch('/api/scan', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            clearInterval(progressInterval);
+            bar.style.width = '100%';
+            status.textContent = 'Scan complete! Refreshing...';
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        })
+        .catch(error => {
+            clearInterval(progressInterval);
+            status.textContent = 'Error: ' + error.message;
+            status.classList.add('text-red-400');
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            icon.classList.remove('animate-spin');
+            text.textContent = 'Scan Mods';
+        });
+}
+</script>
 {% endblock %}

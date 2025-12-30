@@ -1,11 +1,13 @@
 """FastAPI application factory."""
 
 from fastapi import FastAPI, Request
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
-from s4lt.web.routers import dashboard, mods, tray, profiles, api, package, storage
+from s4lt.web.routers import dashboard, mods, tray, profiles, api, package, storage, setup
 from s4lt.deck.detection import is_steam_deck
+from s4lt import __version__
 
 
 def create_app() -> FastAPI:
@@ -13,12 +15,27 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="S4LT",
         description="Sims 4 Linux Toolkit",
-        version="0.4.0",
+        version=__version__,
     )
 
     # Mount static files
     static_dir = Path(__file__).parent / "static"
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+    # First-run setup redirect middleware
+    @app.middleware("http")
+    async def setup_redirect_middleware(request: Request, call_next):
+        # Skip for static files, setup pages, and API endpoints
+        path = request.url.path
+        skip_paths = ["/static/", "/setup", "/api/"]
+        if any(path.startswith(p) for p in skip_paths):
+            return await call_next(request)
+
+        # Check if setup is needed
+        if setup.needs_setup():
+            return RedirectResponse("/setup", status_code=303)
+
+        return await call_next(request)
 
     # Deck mode detection middleware
     @app.middleware("http")
@@ -33,6 +50,7 @@ def create_app() -> FastAPI:
         return response
 
     # Include routers
+    app.include_router(setup.router)  # Setup first for first-run experience
     app.include_router(dashboard.router)
     app.include_router(mods.router)
     app.include_router(tray.router)

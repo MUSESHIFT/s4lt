@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Scanning Mods - S4LT{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold mb-4">Scanning Your Mods</h1>
+        <p class="text-gray-400">{{ mods_path }}</p>
+    </div>
+
+    <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <div id="scan-status">
+            <div class="flex items-center justify-center mb-6">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            </div>
+            <p id="status-text" class="text-center text-lg text-gray-300">Discovering mods...</p>
+            <div class="mt-4">
+                <div class="w-full bg-gray-700 rounded-full h-2">
+                    <div id="progress-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="scan-complete" class="hidden">
+            <div class="flex items-center justify-center mb-6">
+                <svg class="h-16 w-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h2 class="text-xl font-bold text-center mb-4">Scan Complete!</h2>
+
+            <div id="scan-results" class="space-y-4">
+                <!-- Results will be inserted here -->
+            </div>
+
+            <div class="mt-6 pt-6 border-t border-gray-700">
+                <a href="/" class="block w-full px-4 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-medium text-lg text-center transition-colors">
+                    Go to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusEl = document.getElementById('scan-status');
+    const completeEl = document.getElementById('scan-complete');
+    const statusText = document.getElementById('status-text');
+    const progressBar = document.getElementById('progress-bar');
+    const resultsEl = document.getElementById('scan-results');
+
+    // Simulate progress while scanning
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        if (progress < 90) {
+            progress += Math.random() * 10;
+            progressBar.style.width = Math.min(progress, 90) + '%';
+        }
+    }, 500);
+
+    // Start the scan
+    fetch('/setup/scan/start', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            clearInterval(progressInterval);
+            progressBar.style.width = '100%';
+
+            setTimeout(() => {
+                statusEl.classList.add('hidden');
+                completeEl.classList.remove('hidden');
+
+                // Build results HTML
+                let html = '<div class="grid grid-cols-2 gap-4">';
+
+                if (data.total !== undefined) {
+                    html += `
+                        <div class="bg-gray-700 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-blue-400">${data.total}</div>
+                            <div class="text-sm text-gray-400">Total Packages</div>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-green-400">${data.indexed}</div>
+                            <div class="text-sm text-gray-400">Indexed</div>
+                        </div>
+                    `;
+                }
+
+                html += '</div>';
+
+                // Category breakdown
+                if (data.categories) {
+                    html += '<div class="mt-4"><h3 class="text-lg font-medium mb-2">By Category</h3><div class="space-y-2">';
+
+                    const categoryColors = {
+                        'Script Mod': 'bg-purple-600',
+                        'CAS CC': 'bg-pink-600',
+                        'Build/Buy CC': 'bg-blue-600',
+                        'Tuning Mod': 'bg-yellow-600',
+                        'Other': 'bg-gray-600'
+                    };
+
+                    for (const [cat, count] of Object.entries(data.categories)) {
+                        if (count > 0) {
+                            const color = categoryColors[cat] || 'bg-gray-600';
+                            html += `
+                                <div class="flex justify-between items-center">
+                                    <span class="px-2 py-1 ${color} rounded text-sm">${cat}</span>
+                                    <span class="text-gray-300">${count}</span>
+                                </div>
+                            `;
+                        }
+                    }
+
+                    html += '</div></div>';
+                }
+
+                if (data.errors > 0) {
+                    html += `
+                        <div class="mt-4 bg-red-900 border border-red-600 rounded-lg p-3">
+                            <span class="text-red-200">${data.errors} file(s) could not be indexed</span>
+                        </div>
+                    `;
+                }
+
+                resultsEl.innerHTML = html;
+            }, 500);
+        })
+        .catch(error => {
+            clearInterval(progressInterval);
+            statusText.textContent = 'Error: ' + error.message;
+            statusText.classList.add('text-red-400');
+        });
+});
+</script>
+{% endblock %}
