@@ -1,6 +1,7 @@
 README.md
 pyproject.toml
 s4lt/__init__.py
+s4lt/logging.py
 s4lt.egg-info/PKG-INFO
 s4lt.egg-info/SOURCES.txt
 s4lt.egg-info/dependency_links.txt
@@ -83,9 +84,11 @@ s4lt/tray/trayitem.py
 s4lt/web/__init__.py
 s4lt/web/app.py
 s4lt/web/deps.py
+s4lt/web/paths.py
 s4lt/web/routers/__init__.py
 s4lt/web/routers/api.py
 s4lt/web/routers/dashboard.py
+s4lt/web/routers/debug.py
 s4lt/web/routers/mods.py
 s4lt/web/routers/package.py
 s4lt/web/routers/profiles.py

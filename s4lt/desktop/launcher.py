@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+from s4lt.logging import setup_logging, setup_cleanup_handlers, get_log_file
 from s4lt.desktop.app import DesktopApp, Server
 from s4lt.desktop.tray import TrayIcon
 
@@ -16,21 +17,29 @@ _app: Optional[DesktopApp] = None
 _tray: Optional[TrayIcon] = None
 
 
-def setup_logging() -> None:
-    """Set up logging to file and console."""
-    log_dir = Path.home() / ".local" / "share" / "s4lt" / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
+def cleanup() -> None:
+    """Clean up resources on exit."""
+    global _app, _tray
 
-    log_file = log_dir / "s4lt.log"
+    logging.info("Cleaning up resources...")
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        handlers=[
-            logging.FileHandler(log_file),
-            logging.StreamHandler(sys.stdout),
-        ],
-    )
+    # Stop tray icon first
+    if _tray:
+        try:
+            _tray.stop()
+            logging.info("Tray icon stopped")
+        except Exception as e:
+            logging.warning(f"Error stopping tray: {e}")
+        _tray = None
+
+    # Then stop the app
+    if _app:
+        try:
+            _app.quit()
+            logging.info("App stopped")
+        except Exception as e:
+            logging.warning(f"Error stopping app: {e}")
+        _app = None
 
 
 def on_open() -> None:
@@ -51,9 +60,8 @@ def on_logs() -> None:
     """Handle 'View Logs' menu action."""
     import subprocess
 
-    log_file = Path.home() / ".local" / "share" / "s4lt" / "logs" / "s4lt.log"
-    if log_file.exists():
-        # Try to open with default text editor
+    log_file = get_log_file()
+    if log_file and log_file.exists():
         try:
             subprocess.Popen(["xdg-open", str(log_file)])
         except FileNotFoundError:
@@ -62,8 +70,7 @@ def on_logs() -> None:
 
 def on_settings() -> None:
     """Handle 'Settings' menu action."""
-    # TODO: Implement settings dialog
-    logging.info("Settings not yet implemented")
+    logging.info("Opening settings...")
     if _app:
         _app.show()
 
@@ -71,8 +78,8 @@ def on_settings() -> None:
 def on_quit() -> None:
     """Handle 'Quit' menu action."""
     logging.info("Quitting S4LT...")
-    if _app:
-        _app.quit()
+    cleanup()
+    sys.exit(0)
 
 
 def on_window_close() -> None:
@@ -86,7 +93,6 @@ def run_headless(host: str = "127.0.0.1", port: int = 8040) -> None:
     """Run only the web server without GUI components."""
     server = Server(host=host, port=port)
 
-    # Handle Ctrl+C gracefully
     def signal_handler(sig, frame):
         print("\nShutting down...")
         server.stop()
@@ -95,12 +101,14 @@ def run_headless(host: str = "127.0.0.1", port: int = 8040) -> None:
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
+    log_file = get_log_file()
     logging.info("Starting S4LT in headless mode")
     server.start()
     print(f"Server running at http://{host}:{port}")
+    if log_file:
+        print(f"Log file: {log_file}")
     print("Press Ctrl+C to stop")
 
-    # Block forever (signal handler will exit)
     signal.pause()
 
 
@@ -125,15 +133,25 @@ def main() -> None:
         default=8040,
         help="Port to bind to (default: 8040)",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug logging",
+    )
     args = parser.parse_args()
 
-    setup_logging()
+    # Set up logging first
+    log_file = setup_logging(debug=args.debug)
 
     if args.headless:
         run_headless(host=args.host, port=args.port)
         return
 
     logging.info("Starting S4LT Desktop Application")
+    logging.info(f"Log file: {log_file}")
+
+    # Set up cleanup handlers for crash recovery
+    setup_cleanup_handlers(cleanup)
 
     try:
         # Create the desktop app
@@ -160,6 +178,7 @@ def main() -> None:
 
     except Exception as e:
         logging.exception(f"Fatal error: {e}")
+        cleanup()
         sys.exit(1)
 
     logging.info("S4LT shut down cleanly")

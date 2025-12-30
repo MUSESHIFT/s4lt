@@ -11,24 +11,31 @@ def discover_packages(
     mods_path: Path,
     include_subfolders: bool = True,
     ignore_patterns: list[str] | None = None,
+    include_scripts: bool = True,
 ) -> list[Path]:
-    """Discover all .package files in the Mods folder.
+    """Discover all mod files (.package and .ts4script) in the Mods folder.
 
     Args:
         mods_path: Path to the Mods folder
         include_subfolders: Whether to search subdirectories
         ignore_patterns: Folder/file patterns to ignore
+        include_scripts: Whether to include .ts4script files
 
     Returns:
-        List of paths to .package files
+        List of paths to mod files
     """
     if ignore_patterns is None:
         ignore_patterns = ["__MACOSX", ".DS_Store"]
 
+    # Find .package files
     if include_subfolders:
-        all_packages = list(mods_path.rglob("*.package"))
+        all_files = list(mods_path.rglob("*.package"))
+        if include_scripts:
+            all_files.extend(mods_path.rglob("*.ts4script"))
     else:
-        all_packages = list(mods_path.glob("*.package"))
+        all_files = list(mods_path.glob("*.package"))
+        if include_scripts:
+            all_files.extend(mods_path.glob("*.ts4script"))
 
     # Filter out ignored patterns
     def should_include(path: Path) -> bool:
@@ -42,7 +49,7 @@ def discover_packages(
                 return False
         return True
 
-    return [p for p in all_packages if should_include(p)]
+    return [p for p in all_files if should_include(p)]
 
 
 def categorize_changes(

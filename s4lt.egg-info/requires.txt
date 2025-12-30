@@ -7,6 +7,9 @@ python-multipart>=0.0.6
 pywebview>=5.0
 pystray>=0.19
 pillow>=10.0.0
+qtpy
+PyQt5
+PyQtWebEngine
 
 [dev]
 pytest>=7.0

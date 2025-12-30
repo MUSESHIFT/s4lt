@@ -63,6 +63,8 @@ hiddenimports = [
     's4lt.web.routers.package',
     's4lt.web.routers.storage',
     's4lt.web.routers.setup',
+    's4lt.web.routers.debug',
+    's4lt.logging',
 ]
 
 a = Analysis(
