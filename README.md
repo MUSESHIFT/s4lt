@@ -17,7 +17,7 @@ Native Linux mod manager for The Sims 4. Built for Steam Deck and desktop Linux.
 
 ## Install (Steam Deck)
 
-1. Download `S4LT-0.8.0-x86_64.AppImage` from [Releases](../../releases)
+1. Download `S4LT-0.8.0-x86_64.AppImage` from [Releases](https://github.com/MUSESHIFT/s4lt/releases)
 2. Move to your home folder
 3. Right-click → Properties → Permissions → Allow executing as program
 4. Double-click to run
@@ -28,14 +28,14 @@ Native Linux mod manager for The Sims 4. Built for Steam Deck and desktop Linux.
 
 ### AppImage (Recommended)
 ```bash
-wget https://github.com/YOUR_USERNAME/s4lt/releases/download/v0.8.0/S4LT-0.8.0-x86_64.AppImage
+wget https://github.com/MUSESHIFT/s4lt/releases/download/v0.8.0/S4LT-0.8.0-x86_64.AppImage
 chmod +x S4LT-0.8.0-x86_64.AppImage
 ./S4LT-0.8.0-x86_64.AppImage
 ```
 
 ### From Source
 ```bash
-git clone https://github.com/YOUR_USERNAME/s4lt.git
+git clone https://github.com/MUSESHIFT/s4lt.git
 cd s4lt
 pip install -e .
 s4lt-desktop  # Launch GUI
@@ -131,4 +131,4 @@ MIT
 
 ## Credits
 
-Built for the Sims modding community. Inspired by the need for native Linux tools.
+Built by **museshift sims** for the Sims modding community.

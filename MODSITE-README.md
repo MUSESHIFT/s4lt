@@ -94,14 +94,14 @@ A: This is the fallback icon. The app works fine - it just couldn't find the ico
 
 ## Support
 
-- **Bug reports:** [GitHub Issues](https://github.com/YOUR_USERNAME/s4lt/issues)
-- **Source code:** [GitHub](https://github.com/YOUR_USERNAME/s4lt)
+- **Bug reports:** [GitHub Issues](https://github.com/MUSESHIFT/s4lt/issues)
+- **Source code:** [GitHub](https://github.com/MUSESHIFT/s4lt)
 
 ---
 
 ## Credits
 
-Created for the Sims 4 modding community.
+Created by **museshift sims** for the Sims 4 modding community.
 Special thanks to everyone who helped test on Steam Deck!
 
 ---
