@@ -11,9 +11,9 @@ project_root = Path(SPECPATH)
 
 # Collect data files
 datas = [
-    # Web templates and static files
-    (str(project_root / 's4lt' / 'web' / 'templates'), 'web/templates'),
-    (str(project_root / 's4lt' / 'web' / 'static'), 'web/static'),
+    # Web templates and static files - must match import paths
+    (str(project_root / 's4lt' / 'web' / 'templates'), 's4lt/web/templates'),
+    (str(project_root / 's4lt' / 'web' / 'static'), 's4lt/web/static'),
     # Asset files (icons)
     (str(project_root / 'assets'), 'assets'),
 ]
