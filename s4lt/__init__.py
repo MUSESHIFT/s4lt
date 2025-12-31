@@ -7,7 +7,7 @@ from s4lt.core import Package, Resource, DBPFError
 from s4lt.tray import TrayItem, TrayItemType, discover_tray_items
 from s4lt.organize import ModCategory, Profile, toggle_vanilla
 
-__version__ = "0.8.6"
+__version__ = "0.8.7"
 
 __all__ = [
     # Core

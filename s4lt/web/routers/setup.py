@@ -106,98 +106,102 @@ async def setup_scan_page(request: Request):
     )
 
 
-@router.post("/setup/scan/start")
-async def start_initial_scan(request: Request):
-    """Start the initial mod scan and return progress updates via SSE."""
+@router.get("/setup/scan/stream")
+async def stream_scan_progress(request: Request):
+    """Stream scan progress via Server-Sent Events."""
     from s4lt.config.settings import get_settings, DB_PATH
     from s4lt.db.schema import init_db
     from s4lt.mods import discover_packages, index_package
     from s4lt.organize.categorizer import categorize_mod, ModCategory
-    import signal
-    import time
+    from starlette.responses import StreamingResponse
+    import json
+    import asyncio
 
     settings = get_settings()
     if not settings.mods_path:
-        return JSONResponse({"error": "Mods path not configured"}, status_code=400)
+        async def error_gen():
+            yield f"data: {json.dumps({'error': 'Mods path not configured'})}\n\n"
+        return StreamingResponse(error_gen(), media_type="text/event-stream")
 
-    # Initialize database
-    init_db(DB_PATH)
+    async def generate():
+        # Initialize database
+        init_db(DB_PATH)
 
-    # Discover packages
-    logger.info("Discovering packages...")
-    packages = list(discover_packages(settings.mods_path))
-    total = len(packages)
-    logger.info(f"Found {total} packages to index")
+        # Discover packages
+        yield f"data: {json.dumps({'status': 'discovering', 'message': 'Discovering mods...'})}\n\n"
+        await asyncio.sleep(0.01)  # Allow UI to update
 
-    if total == 0:
-        return JSONResponse({
-            "status": "complete",
-            "total": 0,
-            "indexed": 0,
-            "categories": {},
-        })
+        packages = list(discover_packages(settings.mods_path))
+        total = len(packages)
 
-    # Index packages
-    import sqlite3 as sql
-    conn = sql.connect(DB_PATH, check_same_thread=False)
-    conn.execute("PRAGMA foreign_keys = ON")
-    conn.row_factory = sql.Row
+        yield f"data: {json.dumps({'status': 'discovered', 'total': total, 'message': f'Found {total} packages'})}\n\n"
+        await asyncio.sleep(0.01)
 
-    indexed = 0
-    errors = 0
-    skipped = 0
-    categories = {
-        ModCategory.SCRIPT.value: 0,
-        ModCategory.CAS.value: 0,
-        ModCategory.BUILD_BUY.value: 0,
-        ModCategory.TUNING.value: 0,
-        ModCategory.OTHER.value: 0,
-    }
+        if total == 0:
+            yield f"data: {json.dumps({'status': 'complete', 'total': 0, 'indexed': 0, 'categories': {}})}\n\n"
+            return
 
-    # Skip very large files (>100MB) to avoid hanging
-    MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
+        # Index packages
+        import sqlite3 as sql
+        conn = sql.connect(DB_PATH, check_same_thread=False)
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.row_factory = sql.Row
 
-    try:
-        for i, pkg_path in enumerate(packages):
-            try:
-                # Log progress every 10 packages
-                if i % 10 == 0:
-                    logger.info(f"Indexing {i+1}/{total}: {pkg_path.name}")
+        indexed = 0
+        errors = 0
+        categories = {
+            ModCategory.SCRIPT.value: 0,
+            ModCategory.CAS.value: 0,
+            ModCategory.BUILD_BUY.value: 0,
+            ModCategory.TUNING.value: 0,
+            ModCategory.OTHER.value: 0,
+        }
 
-                # Skip very large files
-                file_size = pkg_path.stat().st_size
-                if file_size > MAX_FILE_SIZE:
-                    logger.warning(f"Skipping large file ({file_size / 1024 / 1024:.1f}MB): {pkg_path.name}")
-                    skipped += 1
-                    continue
+        try:
+            for i, pkg_path in enumerate(packages):
+                try:
+                    # Send progress update
+                    progress_data = {
+                        'status': 'indexing',
+                        'current': i + 1,
+                        'total': total,
+                        'percent': round((i + 1) / total * 100),
+                        'filename': pkg_path.name,
+                    }
+                    yield f"data: {json.dumps(progress_data)}\n\n"
 
-                mod_id = index_package(conn, settings.mods_path, pkg_path)
-                if mod_id:
-                    category = categorize_mod(conn, mod_id)
-                    # Update category in database
-                    conn.execute(
-                        "UPDATE mods SET category = ? WHERE id = ?",
-                        (category.value, mod_id)
-                    )
-                    categories[category.value] = categories.get(category.value, 0) + 1
-                indexed += 1
-            except Exception as e:
-                logger.warning(f"Error indexing {pkg_path.name}: {e}")
-                errors += 1
+                    mod_id = index_package(conn, settings.mods_path, pkg_path)
+                    if mod_id:
+                        category = categorize_mod(conn, mod_id)
+                        conn.execute(
+                            "UPDATE mods SET category = ? WHERE id = ?",
+                            (category.value, mod_id)
+                        )
+                        categories[category.value] = categories.get(category.value, 0) + 1
+                    indexed += 1
 
-        conn.commit()
-        logger.info(f"Scan complete: {indexed} indexed, {errors} errors, {skipped} skipped")
-    finally:
-        conn.close()
+                except Exception as e:
+                    logger.warning(f"Error indexing {pkg_path.name}: {e}")
+                    errors += 1
 
-    return JSONResponse({
-        "status": "complete",
-        "total": total,
-        "indexed": indexed,
-        "errors": errors,
-        "skipped": skipped,
-        "categories": categories,
-    })
+                # Yield control periodically to keep stream alive
+                if i % 5 == 0:
+                    await asyncio.sleep(0.001)
+
+            conn.commit()
+        finally:
+            conn.close()
+
+        # Send completion
+        yield f"data: {json.dumps({'status': 'complete', 'total': total, 'indexed': indexed, 'errors': errors, 'categories': categories})}\n\n"
+
+    return StreamingResponse(generate(), media_type="text/event-stream")
+
+
+@router.post("/setup/scan/start")
+async def start_initial_scan(request: Request):
+    """Legacy endpoint - redirects to SSE stream."""
+    return JSONResponse({"redirect": "/setup/scan/stream"})
 
 
 @router.get("/settings")

@@ -14,11 +14,19 @@
             <div class="flex items-center justify-center mb-6">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
             </div>
-            <p id="status-text" class="text-center text-lg text-gray-300">Discovering mods...</p>
+
+            <!-- Progress count -->
+            <p id="progress-count" class="text-center text-2xl font-bold text-blue-400 mb-2">0 / 0</p>
+
+            <!-- Current file -->
+            <p id="current-file" class="text-center text-sm text-gray-400 mb-4 truncate px-4">Discovering mods...</p>
+
+            <!-- Progress bar -->
             <div class="mt-4">
-                <div class="w-full bg-gray-700 rounded-full h-2">
-                    <div id="progress-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                <div class="w-full bg-gray-700 rounded-full h-3">
+                    <div id="progress-bar" class="bg-blue-500 h-3 rounded-full transition-all duration-150" style="width: 0%"></div>
                 </div>
+                <p id="progress-percent" class="text-center text-sm text-gray-500 mt-1">0%</p>
             </div>
         </div>
 
@@ -47,25 +55,43 @@
 document.addEventListener('DOMContentLoaded', function() {
     const statusEl = document.getElementById('scan-status');
     const completeEl = document.getElementById('scan-complete');
-    const statusText = document.getElementById('status-text');
+    const progressCount = document.getElementById('progress-count');
+    const currentFile = document.getElementById('current-file');
     const progressBar = document.getElementById('progress-bar');
+    const progressPercent = document.getElementById('progress-percent');
     const resultsEl = document.getElementById('scan-results');
 
-    // Simulate progress while scanning
-    let progress = 0;
-    const progressInterval = setInterval(() => {
-        if (progress < 90) {
-            progress += Math.random() * 10;
-            progressBar.style.width = Math.min(progress, 90) + '%';
-        }
-    }, 500);
+    // Use Server-Sent Events for real-time progress
+    const eventSource = new EventSource('/setup/scan/stream');
 
-    // Start the scan
-    fetch('/setup/scan/start', { method: 'POST' })
-        .then(response => response.json())
-        .then(data => {
-            clearInterval(progressInterval);
+    eventSource.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+
+        if (data.error) {
+            currentFile.textContent = 'Error: ' + data.error;
+            currentFile.classList.add('text-red-400');
+            eventSource.close();
+            return;
+        }
+
+        if (data.status === 'discovering') {
+            currentFile.textContent = data.message;
+            progressCount.textContent = 'Scanning...';
+        }
+        else if (data.status === 'discovered') {
+            progressCount.textContent = `0 / ${data.total}`;
+            currentFile.textContent = 'Starting indexing...';
+        }
+        else if (data.status === 'indexing') {
+            progressCount.textContent = `${data.current} / ${data.total}`;
+            currentFile.textContent = data.filename;
+            progressBar.style.width = data.percent + '%';
+            progressPercent.textContent = data.percent + '%';
+        }
+        else if (data.status === 'complete') {
+            eventSource.close();
             progressBar.style.width = '100%';
+            progressPercent.textContent = '100%';
 
             setTimeout(() => {
                 statusEl.classList.add('hidden');
@@ -73,20 +99,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Build results HTML
                 let html = '<div class="grid grid-cols-2 gap-4">';
-
-                if (data.total !== undefined) {
-                    html += `
-                        <div class="bg-gray-700 rounded-lg p-4 text-center">
-                            <div class="text-2xl font-bold text-blue-400">${data.total}</div>
-                            <div class="text-sm text-gray-400">Total Packages</div>
-                        </div>
-                        <div class="bg-gray-700 rounded-lg p-4 text-center">
-                            <div class="text-2xl font-bold text-green-400">${data.indexed}</div>
-                            <div class="text-sm text-gray-400">Indexed</div>
-                        </div>
-                    `;
-                }
-
+                html += `
+                    <div class="bg-gray-700 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-blue-400">${data.total}</div>
+                        <div class="text-sm text-gray-400">Total Packages</div>
+                    </div>
+                    <div class="bg-gray-700 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-green-400">${data.indexed}</div>
+                        <div class="text-sm text-gray-400">Indexed</div>
+                    </div>
+                `;
                 html += '</div>';
 
                 // Category breakdown
@@ -112,7 +134,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             `;
                         }
                     }
-
                     html += '</div></div>';
                 }
 
@@ -125,13 +146,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 resultsEl.innerHTML = html;
-            }, 500);
-        })
-        .catch(error => {
-            clearInterval(progressInterval);
-            statusText.textContent = 'Error: ' + error.message;
-            statusText.classList.add('text-red-400');
-        });
+            }, 300);
+        }
+    };
+
+    eventSource.onerror = function(error) {
+        console.error('SSE Error:', error);
+        currentFile.textContent = 'Connection error - refresh to retry';
+        currentFile.classList.add('text-red-400');
+        eventSource.close();
+    };
 });
 </script>
 {% endblock %}
