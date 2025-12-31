@@ -113,6 +113,8 @@ async def start_initial_scan(request: Request):
     from s4lt.db.schema import init_db
     from s4lt.mods import discover_packages, index_package
     from s4lt.organize.categorizer import categorize_mod, ModCategory
+    import signal
+    import time
 
     settings = get_settings()
     if not settings.mods_path:
@@ -122,8 +124,10 @@ async def start_initial_scan(request: Request):
     init_db(DB_PATH)
 
     # Discover packages
+    logger.info("Discovering packages...")
     packages = list(discover_packages(settings.mods_path))
     total = len(packages)
+    logger.info(f"Found {total} packages to index")
 
     if total == 0:
         return JSONResponse({
@@ -141,6 +145,7 @@ async def start_initial_scan(request: Request):
 
     indexed = 0
     errors = 0
+    skipped = 0
     categories = {
         ModCategory.SCRIPT.value: 0,
         ModCategory.CAS.value: 0,
@@ -149,9 +154,23 @@ async def start_initial_scan(request: Request):
         ModCategory.OTHER.value: 0,
     }
 
+    # Skip very large files (>100MB) to avoid hanging
+    MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
+
     try:
-        for pkg_path in packages:
+        for i, pkg_path in enumerate(packages):
             try:
+                # Log progress every 10 packages
+                if i % 10 == 0:
+                    logger.info(f"Indexing {i+1}/{total}: {pkg_path.name}")
+
+                # Skip very large files
+                file_size = pkg_path.stat().st_size
+                if file_size > MAX_FILE_SIZE:
+                    logger.warning(f"Skipping large file ({file_size / 1024 / 1024:.1f}MB): {pkg_path.name}")
+                    skipped += 1
+                    continue
+
                 mod_id = index_package(conn, settings.mods_path, pkg_path)
                 if mod_id:
                     category = categorize_mod(conn, mod_id)
@@ -163,10 +182,11 @@ async def start_initial_scan(request: Request):
                     categories[category.value] = categories.get(category.value, 0) + 1
                 indexed += 1
             except Exception as e:
-                logger.warning(f"Error indexing {pkg_path}: {e}")
+                logger.warning(f"Error indexing {pkg_path.name}: {e}")
                 errors += 1
 
         conn.commit()
+        logger.info(f"Scan complete: {indexed} indexed, {errors} errors, {skipped} skipped")
     finally:
         conn.close()
 
@@ -175,6 +195,7 @@ async def start_initial_scan(request: Request):
         "total": total,
         "indexed": indexed,
         "errors": errors,
+        "skipped": skipped,
         "categories": categories,
     })
 

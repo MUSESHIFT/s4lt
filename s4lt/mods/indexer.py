@@ -1,6 +1,7 @@
 """Package indexer - extracts resources and metadata."""
 
 import hashlib
+import logging
 import sqlite3
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -12,6 +13,8 @@ from s4lt.db.operations import (
     delete_resources_for_mod,
     mark_broken,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def compute_hash(path: Path) -> str:
