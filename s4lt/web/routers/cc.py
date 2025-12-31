@@ -10,7 +10,6 @@ from fastapi.templating import Jinja2Templates
 
 from s4lt.web.paths import get_templates_dir
 from s4lt.web.deps import get_mods_path
-from s4lt.config.settings import Settings
 from s4lt.mods.scanner import discover_packages
 from s4lt.core.categorizer import (
     categorize_package,
@@ -33,7 +32,6 @@ async def cc_browser(
     sort: Optional[str] = Query("name", description="Sort: name, size, date"),
 ):
     """CC Browser with thumbnail grid."""
-    settings = Settings.load()
     mods_path = get_mods_path()
 
     cc_items = []
@@ -146,7 +144,6 @@ async def get_thumbnail(item_id: int, path: str):
 @router.get("/{item_id}", response_class=HTMLResponse)
 async def cc_detail(request: Request, item_id: int, path: str):
     """Detail page for a single CC item."""
-    settings = Settings.load()
     mods_path = get_mods_path()
 
     pkg_path = Path(path)

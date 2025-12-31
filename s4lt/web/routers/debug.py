@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from s4lt.web.paths import get_templates_dir
-from s4lt.config.settings import Settings
+from s4lt.config.settings import get_settings
 from s4lt import __version__
 
 router = APIRouter(prefix="/debug", tags=["debug"])
@@ -32,7 +32,7 @@ async def debug_page(request: Request):
 
     # Get settings
     try:
-        settings = Settings.load()
+        settings = get_settings()
         settings_dict = {
             "mods_path": str(settings.mods_path) if settings.mods_path else None,
             "tray_path": str(settings.tray_path) if settings.tray_path else None,
