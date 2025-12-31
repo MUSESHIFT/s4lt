@@ -2,7 +2,7 @@
 # Build S4LT AppImage for Linux/Steam Deck distribution
 set -e
 
-VERSION="0.8.0"
+VERSION="0.8.1"
 APP_NAME="S4LT"
 ARCH="x86_64"
 

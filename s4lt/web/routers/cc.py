@@ -41,48 +41,52 @@ async def cc_browser(
         packages = discover_packages(mods_path, include_scripts=False)
 
         for pkg_path in packages:
-            # Get relative path for display
             try:
-                rel_path = pkg_path.relative_to(mods_path)
-            except ValueError:
-                rel_path = pkg_path
+                # Get relative path for display
+                try:
+                    rel_path = pkg_path.relative_to(mods_path)
+                except ValueError:
+                    rel_path = pkg_path
 
-            # Categorize
-            category_info = categorize_package(pkg_path)
+                # Categorize
+                category_info = categorize_package(pkg_path)
 
-            # Apply type filter
-            if type:
-                if category_info and category_info.category != type:
-                    continue
+                # Apply type filter
+                if type:
+                    if category_info and category_info.category != type:
+                        continue
 
-            # Apply search filter
-            if search:
-                if search.lower() not in pkg_path.name.lower():
-                    continue
+                # Apply search filter
+                if search:
+                    if search.lower() not in pkg_path.name.lower():
+                        continue
 
-            # Get stats
-            stat = pkg_path.stat()
+                # Get stats
+                stat = pkg_path.stat()
 
-            item = {
-                "id": hash(str(pkg_path)) & 0xFFFFFFFF,  # Simple ID for API
-                "path": str(pkg_path),
-                "rel_path": str(rel_path),
-                "filename": pkg_path.name,
-                "size": stat.st_size,
-                "size_mb": round(stat.st_size / (1024 * 1024), 2),
-                "mtime": stat.st_mtime,
-                "category": category_info.category if category_info else "other",
-                "subcategory": category_info.subcategory if category_info else "unknown",
-                "category_display": get_category_display_name(
-                    category_info.category if category_info else "other"
-                ),
-                "subcategory_display": get_subcategory_display_name(
-                    category_info.subcategory if category_info else "unknown"
-                ),
-                "has_thumbnail": category_info.has_thumbnail if category_info else False,
-                "resource_count": category_info.total_resources if category_info else 0,
-            }
-            cc_items.append(item)
+                item = {
+                    "id": hash(str(pkg_path)) & 0xFFFFFFFF,  # Simple ID for API
+                    "path": str(pkg_path),
+                    "rel_path": str(rel_path),
+                    "filename": pkg_path.name,
+                    "size": stat.st_size,
+                    "size_mb": round(stat.st_size / (1024 * 1024), 2),
+                    "mtime": stat.st_mtime,
+                    "category": category_info.category if category_info else "other",
+                    "subcategory": category_info.subcategory if category_info else "unknown",
+                    "category_display": get_category_display_name(
+                        category_info.category if category_info else "other"
+                    ),
+                    "subcategory_display": get_subcategory_display_name(
+                        category_info.subcategory if category_info else "unknown"
+                    ),
+                    "has_thumbnail": category_info.has_thumbnail if category_info else False,
+                    "resource_count": category_info.total_resources if category_info else 0,
+                }
+                cc_items.append(item)
+            except Exception as e:
+                logger.warning(f"Failed to process {pkg_path}: {e}")
+                continue
 
     # Sort
     if sort == "size":

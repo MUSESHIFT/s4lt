@@ -24,9 +24,14 @@ async def conflicts_page(request: Request):
     mods_path = get_mods_path()
 
     report = None
+    error_message = None
     if mods_path and mods_path.exists():
-        packages = discover_packages(mods_path, include_scripts=True)
-        report = detect_conflicts(packages)
+        try:
+            packages = discover_packages(mods_path, include_scripts=True)
+            report = detect_conflicts(packages)
+        except Exception as e:
+            logger.error(f"Failed to detect conflicts: {e}")
+            error_message = str(e)
 
     return templates.TemplateResponse(
         "conflicts.html",
@@ -35,6 +40,7 @@ async def conflicts_page(request: Request):
             "version": __version__,
             "report": report,
             "mods_path": mods_path,
+            "error_message": error_message,
         },
     )
 
@@ -50,13 +56,20 @@ async def scan_conflicts():
             "error": "Mods path not configured",
         })
 
-    packages = discover_packages(mods_path, include_scripts=True)
-    report = detect_conflicts(packages)
+    try:
+        packages = discover_packages(mods_path, include_scripts=True)
+        report = detect_conflicts(packages)
 
-    return JSONResponse({
-        "success": True,
-        "report": report.to_dict(),
-    })
+        return JSONResponse({
+            "success": True,
+            "report": report.to_dict(),
+        })
+    except Exception as e:
+        logger.error(f"Conflict scan failed: {e}")
+        return JSONResponse({
+            "success": False,
+            "error": str(e),
+        })
 
 
 @router.post("/{conflict_id}/resolve")

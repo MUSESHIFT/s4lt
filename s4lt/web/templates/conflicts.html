@@ -8,6 +8,14 @@
     <p class="text-gray-400">Find duplicate resources and conflicting mods</p>
 </div>
 
+{% if error_message %}
+<div class="bg-red-900/30 border border-red-700 rounded-lg p-6 mb-6">
+    <div class="text-red-400 text-xl font-bold mb-2">⚠️ Error Loading Conflicts</div>
+    <p class="text-red-300">{{ error_message }}</p>
+    <p class="text-red-400/70 mt-2">Check the logs for more details: ~/.local/share/s4lt/logs/</p>
+</div>
+{% endif %}
+
 {% if report %}
 <!-- Summary -->
 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
