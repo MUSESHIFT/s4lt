@@ -148,6 +148,7 @@ async def stream_scan_progress(request: Request):
         conn.row_factory = sql.Row
 
         indexed = 0
+        broken = 0
         errors = 0
         categories = {
             ModCategory.SCRIPT.value: 0,
@@ -160,6 +161,10 @@ async def stream_scan_progress(request: Request):
         try:
             for i, pkg_path in enumerate(packages):
                 try:
+                    # Log progress every 50 packages
+                    if i % 50 == 0:
+                        logger.info(f"Indexing {i+1}/{total}: {pkg_path.name}")
+
                     # Send progress update
                     progress_data = {
                         'status': 'indexing',
@@ -178,7 +183,10 @@ async def stream_scan_progress(request: Request):
                             (category.value, mod_id)
                         )
                         categories[category.value] = categories.get(category.value, 0) + 1
-                    indexed += 1
+                        indexed += 1
+                    else:
+                        # index_package returned None = broken/corrupt package
+                        broken += 1
 
                 except Exception as e:
                     logger.warning(f"Error indexing {pkg_path.name}: {e}")
@@ -189,11 +197,12 @@ async def stream_scan_progress(request: Request):
                     await asyncio.sleep(0.001)
 
             conn.commit()
+            logger.info(f"Scan complete: {indexed} indexed, {broken} broken, {errors} errors")
         finally:
             conn.close()
 
         # Send completion
-        yield f"data: {json.dumps({'status': 'complete', 'total': total, 'indexed': indexed, 'errors': errors, 'categories': categories})}\n\n"
+        yield f"data: {json.dumps({'status': 'complete', 'total': total, 'indexed': indexed, 'broken': broken, 'errors': errors, 'categories': categories})}\n\n"
 
     return StreamingResponse(generate(), media_type="text/event-stream")
 
